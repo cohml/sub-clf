@@ -17,9 +17,9 @@ class CaseNormalizer(SinglePreprocessor):
 
     E.g.:
 
-    |My name is Michelle. I come from Paris, France.
+    |Lorem ipsum DoloR sit amet.
         -->
-    |my name is michelle. i come from paris, france.
+    |lorem ipsum dolor sit amet.
     """
 
     def transform(self, body: dd.Series) -> dd.Series:
@@ -34,16 +34,17 @@ class CodeBlockRemover(SinglePreprocessor):
 
     E.g.:
 
-    |Regular text 1.
+    |Lorem ipsum dolor sit amet,
     |
-    |    code block
+    |    consectetur adipiscing elit,
+    |    sed do eiusmod tempor incididunt
     |
-    |Regular text 2.
+    |ut labore et dolore magna aliqua.
         -->
-    |Regular text 1.
+    |Lorem ipsum dolor sit amet,
     |
     |
-    |Regular text 2.
+    |ut labore et dolore magna aliqua.
     """
 
     pattern = r'(^|\n)(\t| {4,})+.+?$'
@@ -62,9 +63,9 @@ class HyperlinkRemover(SinglePreprocessor):
 
     E.g.:
 
-    |See [Wikipedia](https://www.wikipedia.org/) for more info.
+    |Lorem ipsum dolor sit amet, [consectetur](https://www.website.com) adipiscing elit
         -->
-    |See [Wikipedia]( for more info.
+    |Lorem ipsum dolor sit amet, [consectetur]( adipiscing elit
     """
 
     pattern = r'http\S+'
@@ -83,9 +84,9 @@ class InlineCodeRemover(SinglePreprocessor):
 
     E.g.:
 
-    |You need to import `numpy`.
+    |Lorem ipsum `dolor` sit amet
         -->
-    |You need to import .
+    |Lorem ipsum  sit amet
     """
 
     pattern = r'`.+?`'
@@ -103,13 +104,13 @@ class NewlineCollapser(SinglePreprocessor):
 
     E.g.:
 
-    |Here's the first line.
+    |Lorem ipsum dolor sit amet,
     |
     |
-    |And here's the second.
+    |consectetur adipiscing elit
         -->
-    |Here's the first line.
-    |And here's the second.
+    |Lorem ipsum dolor sit amet,
+    |consectetur adipiscing elit
     """
 
     pattern = r'\n{2,}'
@@ -129,9 +130,9 @@ class PunctuationRemover(SinglePreprocessor):
 
     E.g.:
 
-    |Here's an example. Of some, <<tip-top>> punctu@tion marks!
+    |Here's "Lorem-ipsum. dolor sit @met, <<consectetur>> adipiscing elit!"
         -->
-    |Here's an example Of some tip-top punctution marks
+    |Here's Lorem-ipsum dolor sit met consectetur adipiscing elit
     """
 
     to_remove = ''
@@ -156,16 +157,19 @@ class QuoteRemover(SinglePreprocessor):
 
     E.g.:
 
-    |Your question was:
+    |Lorem ipsum dolor sit amet,
     |
-    |> Why?
+    |> consectetur adipiscing elit,
     |
-    |Because I said so.
+    |>> sed do eiusmod tempor incididunt
+    |
+    |ut labore et dolore magna aliqua.
         -->
-    |Your question was:
+    |Lorem ipsum dolor sit amet,
     |
     |
-    |Because I said so.
+    |
+    |ut labore et dolore magna aliqua.
     """
 
     pattern = r'(^|\n)(&gt;|>).*?\n'    # NB: ">" is sometimes rendered as "&gt;"
@@ -193,9 +197,9 @@ class WhitespaceNormalizer(SinglePreprocessor):
 
     E.g.:
 
-    |Example   \t\t\n\n\t \t\n\r\x0b\x0c here.
+    |Lorem   \t\t\n\n\t \t\n\r\x0b\x0c ipsum
         -->
-    |Example here.
+    |Lorem ipsum
     """
 
     pattern = fr'[{whitespace}]+'
