@@ -6,17 +6,17 @@ Default value constants for importing into other scripts.
 from pathlib import Path
 
 
-PROJECT_DIR = Path(__file__).resolve().parent.parent
+PROJECT_DIR = Path(__file__).resolve().parent.parent.parent
 
 DEFAULTS = {
     'LOG' : {
-        'LEVEL' : 'INFO',
         'FORMAT' : '%(asctime)s : %(levelname)s : %(module)s:%(funcName)s:%(lineno)d : %(message)s',
     },
     'PATHS' : {
         'FILES' : {
-            'MY_SUBS_FILE' : PROJECT_DIR / 'meta' / 'my_subreddits.lst',
             'LOG_CONFIG' : PROJECT_DIR / 'meta' / 'logging.cfg',
+            'MY_SUBREDDITS_FILE' : PROJECT_DIR / 'meta' / 'my_subreddits.lst',
+            'REDDIT_OAUTH_CREDENTIALS' : PROJECT_DIR / 'meta' / 'credentials.json'
         },
         'DIRS' : {
             'ALL_FIELDS' : PROJECT_DIR / 'data' / 'all_fields',

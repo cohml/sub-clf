@@ -1,6 +1,5 @@
 """
-To connect to Reddit, just import this module and run the `connect` function, or
-just import and run the `connect` function directly.
+Utility functions for easily connecting to the Reddit API.
 """
 
 
@@ -9,8 +8,10 @@ import praw
 
 from pathlib import Path
 
+from subreddit_comment_classification.src.utils.const import DEFAULTS
 
-CREDENTIALS = Path(__file__).resolve().parent.parent / 'meta' / 'credentials.json'
+
+CREDENTIALS = DEFAULTS['PATHS']['FILES']['REDDIT_OAUTH_CREDENTIALS']
 
 
 def get_credentials(CREDENTIALS):

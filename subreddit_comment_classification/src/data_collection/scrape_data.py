@@ -15,8 +15,8 @@ from prawcore.exceptions import Forbidden
 from time import sleep
 from typing import Iterable, List, Optional
 
-from const import DEFAULTS
-from login import connect
+from subreddit_comment_classification.src.utils.const import DEFAULTS
+from subreddit_comment_classification.src.utils.login import connect
 
 
 # set up logging
@@ -65,7 +65,7 @@ def parse_args() -> argparse.Namespace:
     subreddits.add_argument(
         '-f', '--subreddits-filepath',
         type=lambda s: Path(s).resolve(),
-        default=DEFAULTS['PATHS']['FILES']['MY_SUBS_FILE'],
+        default=DEFAULTS['PATHS']['FILES']['MY_SUBREDDITS_FILE'],
         help='path to file enumerating subreddits to scrape comment data from '
              '(default: %(default)s)'
     )
@@ -79,7 +79,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '-l', '--log-filepath',
         type=lambda s: Path(s).resolve(),
-        help='path to log file; if not passed, no logging occurs'
+        help='path to log file; if not passed, all logging is printed to stdout but '
+             'not saved to a file'
     )
     parser.add_argument(
         '-p', '--sleep-duration',
