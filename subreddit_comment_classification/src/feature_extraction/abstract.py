@@ -3,10 +3,12 @@ Abstract base classes for text processing transformers to subclass.
 """
 
 
+import dask
 import dask.dataframe as dd
 import warnings
 warnings.simplefilter("ignore", UserWarning)
 
+from concurrent.futures import ThreadPoolExecutor
 from overrides import overrides
 from typing import Any, Optional
 
@@ -79,14 +81,16 @@ class MultiplePreprocessorPipeline:
                                  **pipeline_kwargs)
 
 
-    def preprocess(self, body: dd.Series):
+    def preprocess(self, body: dd.Series, ncores: int = 1):
         """
-        Apply preprocessing steps to comments.
+        Apply parallelized pipeline of preprocessing steps to text.
 
         Parameters
         ----------
         body : dd.Series
             raw comment texts
+        ncores : int
+            cores available for parallel computation
 
         Returns
         -------
@@ -94,4 +98,5 @@ class MultiplePreprocessorPipeline:
             processed comment texts
         """
 
-        return self.pipeline.fit_transform(body)
+        with dask.config.set(pool=ThreadPoolExecutor(max_workers=ncores)):
+            return self.pipeline.fit_transform(body)
