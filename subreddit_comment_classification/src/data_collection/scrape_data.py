@@ -183,7 +183,15 @@ def traverse_comment_threads(posts: List[praw.reddit.Submission],
 
     comments = []
     num_posts = len(posts)
+    scraped_posts = set()
+
     for num_post, post in enumerate(posts, start=1):
+
+        if post.id in scraped_posts:  # in case post tagged as both "top" and "hot"
+            logger.warning(f'Post "{post.id}" comments already scraped ({num_post}/{num_posts})'
+                           '-- skipping post')
+            continue
+
         post_counter = f'{num_post}/{num_posts}'
         logger.info(f'Scraping subreddit "{post.subreddit.display_name}" ({subreddit_counter}) '
                     f'-- post "{post.id}" ({post_counter}, {post.url[8:]}) '
@@ -193,6 +201,8 @@ def traverse_comment_threads(posts: List[praw.reddit.Submission],
         for comment in post.comments:
             comment_thread = traverse(comment)
             comments.extend(comment_thread)
+
+        scraped_posts.add(post.id)
 
     return comments
 
