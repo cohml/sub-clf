@@ -6,7 +6,7 @@ project's package into it:
     $ bash ./create_env.sh
 
 Note: `create_env.sh` can be run from anywhere, and will always install the prefixed
-environment into the repository root.
+environment `./env` into the repository root.
 
 # Data collection
 
