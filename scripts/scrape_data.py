@@ -22,7 +22,7 @@ from login import connect
 # set up logging
 logging.config.fileConfig(DEFAULTS['PATHS']['FILES']['LOG_CONFIG'])
 logger = logging.getLogger(__name__)
-formatter = logging.Formatter('%(asctime)s : %(levelname)s : %(module)s:%(funcName)s:%(lineno)d : %(message)s')
+formatter = logging.Formatter(DEFAULTS['LOG']['FORMAT'])
 
 
 def get_subreddits(subreddits_filepath: Path) -> List[str]:

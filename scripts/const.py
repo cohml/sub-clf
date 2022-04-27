@@ -11,7 +11,7 @@ PROJECT_DIR = Path(__file__).resolve().parent.parent
 DEFAULTS = {
     'LOG' : {
         'LEVEL' : 'INFO',
-        'FMT' : '{}  **{:^10}**  {}',
+        'FORMAT' : '%(asctime)s : %(levelname)s : %(module)s:%(funcName)s:%(lineno)d : %(message)s',
     },
     'PATHS' : {
         'FILES' : {
