@@ -75,8 +75,8 @@ class MultiplePreprocessorPipeline:
             any keyword argument that `sklearn.pipeline.Pipeline` will accept
         """
 
-        preprocessors = [(p.__class__.__name__, p) for p in preprocessors]
-        self.pipeline = Pipeline(steps=preprocessors,
+        steps = [(p.__class__.__name__, p) for p in preprocessors]
+        self.pipeline = Pipeline(steps=steps,
                                  memory='cache_directory',
                                  **pipeline_kwargs)
 
