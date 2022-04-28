@@ -15,6 +15,14 @@ from subreddit_comment_classification.src.utils.const import DEFAULTS
 
 
 def parse_args() -> argparse.Namespace:
+    """
+    Parse command line arguments.
+
+    Returns
+    -------
+    args : argparse.Namespace
+    """
+
     parser = argparse.ArgumentParser(
         description='Apply assumptions and rule-based heuristics to identify and drop '
                     'invalid samples from data set, writing the cleaned results to a '
@@ -49,6 +57,17 @@ def drop_invalid_rows(df: pd.DataFrame) -> Tuple[pd.DataFrame, int, int]:
 
     4. Entry in any of the following columns is too long/short:
         {'id', 'link_id', 'subreddit_id'}
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        all data scraped for a single subreddit
+
+    Returns
+    -------
+    df : pd.DataFrame
+        all data scraped for a single subreddit, minus any rows identified as corrupt
+        or invalid
     """
 
     nrows_original = df.shape[0]
