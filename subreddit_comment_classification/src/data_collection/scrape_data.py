@@ -79,8 +79,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '-l', '--log-filepath',
         type=lambda s: Path(s).resolve(),
-        help='path to log file; if not passed, all logging is printed to stdout but '
+        help='path to log file; if unspecified, all logging is printed to stdout but '
              'not saved to a file'
+    )
+    parser.add_argument(
+        '-m', '--limit',
+        type=int,
+        help='maximum number of comments to scrape from each of the "top" and "hot" '
+             'categories; if unspecified, as many as possible will be scraped, up to '
+             '1000 per category (default: %(default)s)'
     )
     parser.add_argument(
         '-p', '--sleep-duration',
@@ -101,7 +108,8 @@ def parse_args() -> argparse.Namespace:
 
 def scrape_posts(reddit: praw.Reddit,
                  subreddit: str,
-                 subreddit_counter: str
+                 subreddit_counter: str,
+                 limit: Optional[int]
                  ) -> Optional[List[praw.reddit.Submission]]:
     """
     Scrape up to 1000 top + hot posts from each of the passed subreddits.
@@ -114,6 +122,8 @@ def scrape_posts(reddit: praw.Reddit,
         display name of a single subreddit
     subreddit_counter : str
         string representation of number of subreddits scraped so far
+    limit : Optional[int]
+        maximum number of comments to scrape from each of the "top" and "hot" categories
 
     Returns
     -------
@@ -125,8 +135,8 @@ def scrape_posts(reddit: praw.Reddit,
     logger.info(f'Scraping subreddit "{subreddit}" ({subreddit_counter})')
 
     try:
-        top_posts = reddit.subreddit(subreddit).top(limit=None)
-        hot_posts = reddit.subreddit(subreddit).hot(limit=None)
+        top_posts = reddit.subreddit(subreddit).top(limit=limit)
+        hot_posts = reddit.subreddit(subreddit).hot(limit=limit)
     except Forbidden:
         logger.error(f'ForbiddenError triggered by subreddit "{subreddit}" '
                      '-- check if private, or typo in name '
@@ -284,7 +294,7 @@ def main() -> None:
         subreddit_counter = f'{num_subreddit}/{num_subreddits}'
 
         # scrape posts
-        posts = scrape_posts(reddit, subreddit, subreddit_counter)
+        posts = scrape_posts(reddit, subreddit, subreddit_counter, args.limit)
 
         # skip subreddit if error accessing its contents
         if posts is None:
