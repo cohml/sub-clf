@@ -13,6 +13,7 @@ setup(
     packages=find_packages(exclude=['tests']),
     include_package_data=True,
     install_requires=['dask>=2022.4.1',
+                      'dask-ml>=2022.1.22',
                       'ipython>=8.2.0',
                       'jupyter>=1.0.0',
                       'matplotlib>=3.5.1',
