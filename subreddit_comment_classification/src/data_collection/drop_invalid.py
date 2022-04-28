@@ -110,6 +110,9 @@ def main() -> None:
 
     for subreddit in args.all_fields_directory.glob('*.csv'):
 
+        if subreddit.stem.endswith('_cleaned'):
+            continue
+
         print('-' * 100)
         print('reading:', subreddit.name)
         df = pd.read_csv(subreddit, **safe_parsing_params)

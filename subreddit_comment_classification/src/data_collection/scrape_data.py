@@ -282,7 +282,8 @@ def main() -> None:
 
     # optionally skip subreddits from which comments have already been scraped
     if args.resume:
-        already_scraped = [p.stem for p in args.output_directory.glob('*.csv')]
+        already_scraped = [p.stem for p in args.output_directory.glob('*.csv')
+                           if not p.stem.endswith('_cleaned')]
         for subreddit in sorted(already_scraped, key=str.lower):
             if subreddit in subreddits:
                 logger.info(f'Skipping subreddit "{subreddit}"')
