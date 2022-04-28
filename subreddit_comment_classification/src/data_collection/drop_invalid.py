@@ -29,7 +29,7 @@ def parse_args() -> argparse.Namespace:
                     'new CSV file with the same name as the source plus "_cleaned".'
     )
     parser.add_argument(
-        '-a', '--all-fields-directory',
+        '-i', '--input-directory',
         type=lambda s: Path(s).resolve(),
         default=DEFAULTS['PATHS']['DIRS']['ALL_FIELDS'],
         help='path to directory with CSV files (one per subreddit) containing all '
@@ -39,7 +39,7 @@ def parse_args() -> argparse.Namespace:
         '-o', '--output-directory',
         type=lambda s: Path(s).resolve(),
         help='path to directory to write output files to (one per subreddit); if '
-             'unspecified, defaults to `all_fields` directory (default: %(default)s)'
+             'unspecified, defaults to the input directory (default: %(default)s)'
     )
     return parser.parse_args()
 
@@ -99,7 +99,7 @@ def main() -> None:
     args = parse_args()
 
     # set output directory, and if needed, create it
-    output_directory = args.output_directory or args.all_fields_directory
+    output_directory = args.output_directory or args.input_directory
     if not output_directory.exists():
         output_directory.mkdir(parents=True)
         print('created:', output_directory)
@@ -108,7 +108,7 @@ def main() -> None:
                            'engine' : 'python',
                            'on_bad_lines' : 'skip'}
 
-    for subreddit in args.all_fields_directory.glob('*.csv'):
+    for subreddit in args.input_directory.glob('*.csv'):
 
         if subreddit.stem.endswith('_cleaned'):
             continue
