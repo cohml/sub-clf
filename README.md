@@ -46,3 +46,9 @@ This is because new "top" and "hot" posts are always being added, while the numb
 can scrape from each category is capped at 1000. Regardless, the characteristics of all
 newly scraped comments should approximate the original data set, given the sheer volume
 of comments `scrape` will retrieve.
+
+After scraping, some rows may contain data that is corrupt or otherwise invalid. To
+identify and drop all rows thus affected:
+
+    $ conda activate ./env
+    $ clean
