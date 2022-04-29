@@ -8,7 +8,7 @@ import re
 
 from string import punctuation, whitespace
 
-from .abstract import SinglePreprocessor
+from ..feature_extraction.abstract import SinglePreprocessor
 
 
 class CaseNormalizer(SinglePreprocessor):
