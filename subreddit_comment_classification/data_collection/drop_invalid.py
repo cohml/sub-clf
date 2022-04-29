@@ -43,6 +43,11 @@ def drop_invalid_rows(df: pd.DataFrame) -> Tuple[pd.DataFrame, int, int]:
 
     nrows_original = df.shape[0]
 
+    # comments with a stray quotation mark screw up the pandas parser, but this is
+    # hard to fix surgically, so just be safe and nuke all quotation marks
+    df = df.replace('"', '', regex=True)
+    df = df.replace('', nan)  # for fields (really comments) that were just all quotes
+
     # drop rows with NaN entries in any of the following columns
     non_nan_columns = ['author', 'body', 'id', 'parent_id', 'subreddit', 'subreddit_id']
     df = df.loc[df[non_nan_columns].notna().all(axis=1)]
@@ -156,11 +161,11 @@ def normalize_dtypes_by_column(df: pd.DataFrame) -> pd.DataFrame:
     # for select int cols, convert NaN entries to 0
     for col in ['score', 'ups']:
         df.loc[df[col].isna(), col] = 0
-        df[col] = df[col].astype(int)
+        df[col] = df[col].astype(float).astype(int)  # just to be safe, lest decimals
 
     # set NaN entries in `controversiality` to 0, as this appears to be a binary column
     df.loc[df.controversiality.isna(), 'controversiality'] = 0
-    df.controversiality = df.controversiality.astype(int)
+    df.controversiality = df.controversiality.astype(float).astype(int)
 
     # set `downs` to 0, since this field has been deprecated by Reddit
     df.downs = 0
@@ -246,10 +251,6 @@ def main() -> None:
 
         # ensure no columns contain mixed data types
         df = normalize_dtypes_by_column(df)
-
-        # comments with a stray quotation mark screw up the pandas parser, but this is
-        # hard to fix surgically, so just be safe and nuke all quotation marks
-        df = df.replace('"', '', regex=True)
 
         output_filename = output_directory / (subreddit.stem + '_cleaned.csv')
         df.to_csv(output_filename, index=False)
