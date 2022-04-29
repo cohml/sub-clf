@@ -15,8 +15,8 @@ from prawcore.exceptions import Forbidden
 from time import sleep
 from typing import Iterable, List, Optional
 
-from subreddit_comment_classification.src.utils.const import DEFAULTS
-from subreddit_comment_classification.src.utils.login import connect
+from subreddit_comment_classification.utils.const import DEFAULTS
+from subreddit_comment_classification.utils.login import connect
 
 
 # set up logging

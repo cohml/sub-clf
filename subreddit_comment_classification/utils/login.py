@@ -8,7 +8,7 @@ import praw
 
 from pathlib import Path
 
-from subreddit_comment_classification.src.utils.const import DEFAULTS
+from subreddit_comment_classification.utils.const import DEFAULTS
 
 
 CREDENTIALS = DEFAULTS['PATHS']['FILES']['REDDIT_OAUTH_CREDENTIALS']

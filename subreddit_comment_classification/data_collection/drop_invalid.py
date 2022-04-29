@@ -12,7 +12,7 @@ from numpy import nan
 from pathlib import Path
 from typing import Tuple
 
-from subreddit_comment_classification.src.utils.const import DEFAULTS
+from subreddit_comment_classification.utils.const import DEFAULTS
 
 
 def drop_invalid_rows(df: pd.DataFrame) -> Tuple[pd.DataFrame, int, int]:

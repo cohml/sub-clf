@@ -6,7 +6,7 @@ Default value constants for importing into other scripts.
 from pathlib import Path
 
 
-PROJECT_DIR = Path(__file__).resolve().parent.parent.parent
+PROJECT_DIR = Path(__file__).resolve().parent.parent
 
 DEFAULTS = {
     'DTYPES' : {
