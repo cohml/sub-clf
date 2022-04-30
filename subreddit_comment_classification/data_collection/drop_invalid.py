@@ -85,38 +85,38 @@ def normalize_dtypes_by_column(df: pd.DataFrame) -> pd.DataFrame:
         all valid data scraped for a single subreddit, with data types normalized
     """
 
-    # enforce NaNs in all columns which should be empty or I otherwise don't care about
-    nan_cols = ['approved_at_utc',
-                'approved_by',
-                'awarders',
-                'author_cakeday',
-                'author_flair_richtext',
-                'author_flair_template_id',
-                'author_fullname',
-                'author_is_blocked',
-                'author_patreon_flair',
-                'associated_award',
-                'banned_at_utc',
-                'banned_by',
-                'body_html',
-                'can_mod_post',
-                'collapsed_because_crowd_control',
-                'collapsed_reason_code',
-                'comment_type',
-                'editable',
-                'likes',
-                'mod_note',
-                'mod_reason_by',
-                'mod_reports',
-                'num_reports',
-                'removal_reason',
-                'report_reasons',
-                'saved',
-                'top_awarded_type',
-                'unrepliable_reason',
-                'user_reports']
-    df[nan_cols] = nan
-    df[nan_cols] = df[nan_cols].astype(float)
+    # the following columns either (1) should only have NaN values, (2) are totally
+    # uninteresting to me, or (3) keep introducing mixed data type issues down the
+    # line, so I just keep things simple and remove them here
+    df = df.drop(columns=['approved_at_utc',
+                          'approved_by',
+                          'awarders',
+                          'author_cakeday',
+                          'author_flair_richtext',
+                          'author_flair_template_id',
+                          'author_fullname',
+                          'author_is_blocked',
+                          'author_patreon_flair',
+                          'associated_award',
+                          'banned_at_utc',
+                          'banned_by',
+                          'body_html',
+                          'can_mod_post',
+                          'collapsed_because_crowd_control',
+                          'collapsed_reason_code',
+                          'comment_type',
+                          'editable',
+                          'likes',
+                          'mod_note',
+                          'mod_reason_by',
+                          'mod_reports',
+                          'num_reports',
+                          'removal_reason',
+                          'report_reasons',
+                          'saved',
+                          'top_awarded_type',
+                          'unrepliable_reason',
+                          'user_reports'], errors='ignore')
 
     # convert all values in select int columns to their integer counterparts, else to 0
     cols = ['gilded', 'total_awards_received']
