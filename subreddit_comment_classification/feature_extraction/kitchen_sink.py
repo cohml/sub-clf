@@ -18,6 +18,7 @@ class KitchenSinkPreprocessor(MultiplePreprocessorPipeline):
                      InlineCodeRemover(),
                      CodeBlockRemover(),
                      QuoteRemover(),
+                     ApostropheNormalizer(),
                      PunctuationRemover(),
                      WhitespaceNormalizer(),
                      NewlineCollapser(),

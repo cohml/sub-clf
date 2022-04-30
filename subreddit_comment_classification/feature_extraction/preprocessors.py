@@ -11,6 +11,27 @@ from string import punctuation, whitespace
 from ..feature_extraction.abstract import SinglePreprocessor
 
 
+class ApostropheNormalizer(SinglePreprocessor):
+    """
+    Normalize all apostrophes to a single standard form.
+
+    E.g.:
+
+    |Lorem ip‛sum dolor‘s sit amet
+        -->
+    |Lorem ip'sum dolor's sit amet
+    """
+
+    pattern = r"['‘’‛‚]"
+
+    def transform(self, body: dd.Series) -> dd.Series:
+        """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
+        apostrophes = {'pat' : re.compile(self.pattern),
+                       'repl' : "'",
+                       'regex' : True}
+        return body.str.replace(**apostrophes)
+
+
 class CaseNormalizer(SinglePreprocessor):
     """
     Normalize comments to lowercase.

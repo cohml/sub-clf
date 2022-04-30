@@ -43,17 +43,10 @@ def drop_invalid_rows(df: pd.DataFrame) -> Tuple[pd.DataFrame, int, int]:
 
     nrows_original = df.shape[0]
 
-    # normalize apostrophes and quotation marks
-    for apostrophe in '‘’‛‚':
-        df = df.replace(apostrophe, "'")
-    for quotation_mark in '“”‟„⹂〞〟＂❝❞':
-        df = df.replace(quotation_mark, '"')
-
     # comments with a stray quotation mark screw up the pandas parser, but this is
     # hard to fix surgically, so just be safe and nuke all quotation marks
-    df = df.replace('"', '', regex=True)
-    df = df.replace('', nan)  # for fields (really comments) that were just all quotes
-
+    df = (df.replace(r'["“”‟„⹂〞〟＂❝❞]', '', regex=True)
+            .replace('', nan))  # b/c comments that were entirely quotation marks are now blank
     # drop rows with NaN entries in any of the following columns
     non_nan_columns = ['author', 'body', 'id', 'parent_id', 'subreddit', 'subreddit_id']
     df = df.loc[df[non_nan_columns].notna().all(axis=1)]
