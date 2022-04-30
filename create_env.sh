@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -eu
+
 PROJECT_ROOT_DIR=$(dirname "$0")
 
 # set up conda environment
