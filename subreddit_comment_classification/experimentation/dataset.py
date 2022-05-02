@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from scipy.sparse.base import spmatrix
 from sklearn.model_selection import train_test_split
@@ -196,7 +196,7 @@ class Partition(Dataset):
     """A subset of the total dataset, for example a train or test set."""
 
     def __init__(self,
-                 features: spmatrix,
+                 features: Union[np.ndarray, spmatrix],
                  labels: np.ndarray,
                  categorical_labels: dd.Series,
                  indices: pd.core.indexes.numeric.Int64Index):
@@ -205,7 +205,7 @@ class Partition(Dataset):
 
         Parameters
         ----------
-        features : spmatrix
+        features : Union[np.ndarray, spmatrix]
             extracted features for the partition
         labels : np.ndarray
             binarized labels for the partition
