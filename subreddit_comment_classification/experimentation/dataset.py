@@ -56,15 +56,19 @@ class Dataset:
 
 
     def describe(self) -> None:     # TODO
-        # `self.features` and `self.labels` will be defined before this is called, where
-        # `self.features` will be a `np.ndarray` or a scipy spare matrix and `self.labels`
-        # will be a np.array;
-        # if `self` == partition instead of total dataset, `self.categorical_labels` will
-        # also be defined, which is basically the list of subreddit names;
+
+        # `self.features`, `self.labels`, and `self.categorical_labels` will all be
+        # defined before this is called
+
+        # `self.features` will be a `np.ndarray` or a scipy spare matrix, `self.labels`
+        # will be a `np.ndarray`, and `self.categorical_labels` will be a `dask.Series`
+
         # in this method, just compute some summary statistics about distributions of
         # classes and such, whatever i want to know in order to understand my model's
-        # performance better;
-        # these stats can be referenced when creating the `Report`
+        # performance better (see notes on phone for many ideas)
+
+        # these stats can be referenced when creating the `Report` object
+
         pass
 
 
