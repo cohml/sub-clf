@@ -6,23 +6,16 @@ Utility functions for easily connecting to the Reddit API.
 import json
 import praw
 
-from pathlib import Path
-
-from subreddit_comment_classification.utils.const import DEFAULTS
+from ..utils.defaults import DEFAULTS
 
 
-CREDENTIALS = DEFAULTS['PATHS']['FILES']['REDDIT_OAUTH_CREDENTIALS']
+CREDENTIALS_FILEPATH = DEFAULTS['PATHS']['FILES']['REDDIT_OAUTH_CREDENTIALS']
 
 
-def get_credentials(CREDENTIALS):
-    """Load credentials from config file for OAuthorization"""
+class Reddit:
 
-    with open(CREDENTIALS) as credentials:
-        return json.load(credentials)
-
-
-def connect():
-    """Connect to Reddit API"""
-
-    credentials = get_credentials(CREDENTIALS)
-    return praw.Reddit(**credentials)
+    def __init__(self):
+        """Log into Reddit's backend API."""
+        with open(CREDENTIALS_FILEPATH) as credentials_fh:
+            self.credentials = json.load(credentials_fh)
+            self.session = praw.Reddit(**self.credentials)
