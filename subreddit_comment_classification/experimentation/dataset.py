@@ -43,13 +43,14 @@ class Dataset:
         else:
             self.load_from_raw_data_filepaths(config)
 
-        self.labels = LabelBinarizer().fit_transform(self.raw_data.subreddit)
         self.preprocess(config)
-        self.size = len(self.preprocessed_data)
+
+        self.labels = LabelBinarizer().fit_transform(self.raw_data.subreddit)
+        self.categorical_labels = self.raw_data.subreddit
+        self.size = self.preprocessed_data.index.size.compute()
 
         if 'features_directory' in config:
             self.load_from_features_directory(config)
-
         elif 'features_filepaths' in config:
             self.load_from_features_filepaths(config)
         else:
@@ -83,7 +84,7 @@ class Dataset:
                    f'Please select one from the following: {pretty_dumps(extractors)}')
             raise KeyError(err)
 
-        extractor = extractor(**config.dict['extractor_kwargs'])
+        extractor = extractor(**config.extractor_kwargs)
         self.features = extractor.fit_transform(self.preprocessed_data)
 
         if 'write_features_filepath' in config:
@@ -134,7 +135,7 @@ class Dataset:
         """Split data into train and test sets."""
 
         indices = self.preprocessed_data.index.compute()
-        train, test = train_test_split(indices, **config.dict['train_test_split_kwargs'])
+        train, test = train_test_split(indices, **config.train_test_split_kwargs)
 
         self.train_set = Partition(self.features[train],
                                    self.labels[train],
