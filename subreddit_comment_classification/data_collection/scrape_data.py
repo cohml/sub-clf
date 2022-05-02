@@ -15,8 +15,9 @@ from prawcore.exceptions import Forbidden
 from time import sleep
 from typing import Iterable, List, Optional
 
-from ..utils.const import DEFAULTS
-from ..utils.login import connect
+from ..utils.defaults import DEFAULTS
+from ..utils.login import Reddit
+from ..utils.misc import full_path
 
 
 # set up logging
@@ -64,21 +65,21 @@ def parse_args() -> argparse.Namespace:
     )
     subreddits.add_argument(
         '-f', '--subreddits-filepath',
-        type=lambda s: Path(s).resolve(),
+        type=full_path,
         default=DEFAULTS['PATHS']['FILES']['MY_SUBREDDITS_FILE'],
         help='path to file enumerating subreddits to scrape comment data from '
              '(default: %(default)s)'
     )
     parser.add_argument(
         '-o', '--output-directory',
-        type=lambda s: Path(s).resolve(),
+        type=full_path,
         default=DEFAULTS['PATHS']['DIRS']['ALL_FIELDS'],
         help='path to directory to write output files to (one per subreddit)'
              '(default: %(default)s)'
     )
     parser.add_argument(
         '-l', '--log-filepath',
-        type=lambda s: Path(s).resolve(),
+        type=full_path,
         help='path to log file; if unspecified, all logging is printed to stdout but '
              'not saved to a file'
     )
@@ -272,7 +273,7 @@ def main() -> None:
         logger.addHandler(log_filepath_handler)
 
     # connect to reddit
-    reddit = connect()
+    reddit = Reddit()
 
     # get list of subs to scrape data from
     if args.subreddits:
@@ -295,7 +296,7 @@ def main() -> None:
         subreddit_counter = f'{num_subreddit}/{num_subreddits}'
 
         # scrape posts
-        posts = scrape_posts(reddit, subreddit, subreddit_counter, args.limit)
+        posts = scrape_posts(reddit.session, subreddit, subreddit_counter, args.limit)
 
         # skip subreddit if error accessing its contents
         if posts is None:
