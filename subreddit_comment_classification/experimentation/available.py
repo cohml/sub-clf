@@ -14,17 +14,17 @@ from embed.embeddings import LgEmbeddingsVectorizer, TrfEmbeddingsVectorizer
 ## ---- preprocessors
 from preprocessing.kitchen_sink import KitchenSinkPreprocessor
 from preprocessing.preprocessors import (
-    AccentRemover
-    ApostropheNormalizer
-    CaseNormalizer
-    CodeBlockRemover
-    HyperlinkRemover
-    InlineCodeRemover
-    NewlineCollapser
-    PunctuationRemover
-    QuoteRemover
-    SinglePreprocessor
-    Stemmer
+    AccentRemover,
+    ApostropheNormalizer,
+    CaseNormalizer,
+    CodeBlockRemover,
+    HyperlinkRemover,
+    InlineCodeRemover,
+    NewlineCollapser,
+    PunctuationRemover,
+    QuoteRemover,
+    SinglePreprocessor,
+    Stemmer,
     WhitespaceNormalizer
 )
 
