@@ -23,7 +23,7 @@ from utils.misc import pretty_dumps
 class Dataset:
     """The total set of all comments used to train and evaluate a model."""
 
-    def __init__(self, config: Config) -> 'Dataset':
+    def __init__(self, config: Config) -> None:
         """
         Read in data and return features.
 
