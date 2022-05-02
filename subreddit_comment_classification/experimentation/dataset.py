@@ -31,11 +31,6 @@ class Dataset:
         ----------
         config : Config
             an object enumerating all parameters for your experiment
-
-        Returns
-        -------
-        dataset : Dataset
-            processed data
         """
 
         if 'raw_data_directory' in config:
