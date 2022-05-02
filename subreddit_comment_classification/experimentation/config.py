@@ -9,6 +9,8 @@ import yaml
 from pathlib import Path
 from typing import Any, Dict
 
+from utils.misc import full_path
+
 
 class Config:
 
@@ -21,9 +23,9 @@ class Config:
 
         for parameter, value in self.dict.items():
             if parameter.endswith(('directory', 'filepath')):
-                value = Path(value).resolve()
+                value = full_path(value)
             elif parameter.endswith('filepaths'):
-                value = [Path(v).resolve() for v in value]
+                value = [full_path(path) for path in value]
             setattr(self, parameter, value)
 
 
