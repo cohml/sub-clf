@@ -6,8 +6,8 @@ currently defined in `preprocessers.py`.
 
 from overrides import overrides
 
-from ..feature_extraction.abstract import MultiplePreprocessorPipeline
-from ..feature_extraction.preprocessors import *
+from preprocessing.abstract import MultiplePreprocessorPipeline
+from preprocessing.preprocessors import *
 
 
 class KitchenSinkPreprocessor(MultiplePreprocessorPipeline):
@@ -18,6 +18,7 @@ class KitchenSinkPreprocessor(MultiplePreprocessorPipeline):
                      InlineCodeRemover(),
                      CodeBlockRemover(),
                      QuoteRemover(),
+                     AccentRemover(),
                      ApostropheNormalizer(),
                      PunctuationRemover(),
                      WhitespaceNormalizer(),
@@ -26,5 +27,5 @@ class KitchenSinkPreprocessor(MultiplePreprocessorPipeline):
 
 
     @overrides
-    def __init__(self, **pipeline_kwargs):
-        super().__init__(*self.preprocessors, **pipeline_kwargs)
+    def __init__(self, verbose: bool = True):
+        super().__init__(*self.preprocessors, verbose=verbose)

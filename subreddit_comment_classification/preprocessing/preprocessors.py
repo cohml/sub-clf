@@ -7,8 +7,27 @@ import dask.dataframe as dd
 import re
 
 from string import punctuation, whitespace
+from sklearn.feature_extraction.text import strip_accents_ascii, strip_accents_unicode
 
-from ..feature_extraction.abstract import SinglePreprocessor
+from preprocessing.abstract import SinglePreprocessor
+
+
+class AccentRemover(SinglePreprocessor):
+    """
+    Remove all ASCII and Unicode accent marks from comments.
+
+    E.g.:
+
+    |ìíîïñòóôõöùúûüý and \xec\xed\xee\xef\xf1\xf2\xf3\xf4\xf5\xf6\xf9\xfa\xfb\xfc\xfd
+        ->
+    |iiiinooooouuuuy and iiiinooooouuuuy
+    """
+
+    def transform(self, body: dd.Series) -> dd.Series:
+        """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
+        for strip_accents in [strip_accents_ascii, strip_accents_unicode]:
+            body = body.map(strip_accents)
+        return body
 
 
 class ApostropheNormalizer(SinglePreprocessor):

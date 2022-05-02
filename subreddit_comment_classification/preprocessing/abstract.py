@@ -20,7 +20,7 @@ class SinglePreprocessor(BaseEstimator, TransformerMixin):
     """A single text preprocessing step."""
 
     @overrides
-    def __init__(self):
+    def __init__(self, **kwargs):
         pass
 
 
@@ -59,7 +59,7 @@ class MultiplePreprocessorPipeline:
 
     def __init__(self,
                  *preprocessors: SinglePreprocessor,
-                 **pipeline_kwargs: Any):
+                 verbose: bool = True):
         """
         Initialize a `MultiplePreprocessorPipeline` class instance with an arbitrary
         number of text preprocessing steps ready for use.
@@ -71,14 +71,14 @@ class MultiplePreprocessorPipeline:
         ----------
         preprocessors : SinglePreprocessor
             sequence of text preprocessors to apply to the comments
-        pipeline_kwargs : Any
-            any keyword argument that `sklearn.pipeline.Pipeline` will accept
+        verbose : bool
+            print status to stdout if True, else preprocess silently
         """
 
         steps = [(p.__class__.__name__, p) for p in preprocessors]
         self.pipeline = Pipeline(steps=steps,
-                                 memory='cache_directory',
-                                 **pipeline_kwargs)
+                                 verbose=verbose,
+                                 memory='cache_directory')
 
 
     def preprocess(self, body: dd.Series, ncores: int = 1):
