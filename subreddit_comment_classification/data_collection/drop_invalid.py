@@ -12,7 +12,8 @@ from numpy import nan
 from pathlib import Path
 from typing import Tuple
 
-from ..utils.const import DEFAULTS
+from ..utils.defaults import DEFAULTS
+from ..utils.misc import full_path
 
 
 def drop_invalid_rows(df: pd.DataFrame) -> Tuple[pd.DataFrame, int, int]:
@@ -208,14 +209,14 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         '-i', '--input-directory',
-        type=lambda s: Path(s).resolve(),
+        type=full_path,
         default=DEFAULTS['PATHS']['DIRS']['ALL_FIELDS'],
         help='path to directory with CSV files (one per subreddit) containing all '
              'fields scraped from Reddit (default: %(default)s)'
     )
     parser.add_argument(
         '-o', '--output-directory',
-        type=lambda s: Path(s).resolve(),
+        type=full_path,
         help='path to directory to write output files to (one per subreddit); if '
              'unspecified, defaults to the input directory (default: %(default)s)'
     )
