@@ -204,15 +204,14 @@ class Partition(Dataset):
 
         Parameters
         ----------
-        indices : pd.core.indexes.numeric.Int64Index
-            indices of samples selected for the partition
         features : spmatrix
             extracted features for the partition
         labels : np.ndarray
             binarized labels for the partition
         categorical_labels : dd.Series
             subreddit names for each sample in the partition; useful for `describe`
-        indices
+        indices : pd.core.indexes.numeric.Int64Index
+            indices of samples selected for the partition
         """
 
         self.indices = indices
