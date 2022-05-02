@@ -1,5 +1,5 @@
 """
-Default value constants for importing into other scripts.
+Default parameter values and other constants for importing into other scripts.
 """
 
 
