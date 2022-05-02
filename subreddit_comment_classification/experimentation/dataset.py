@@ -201,7 +201,7 @@ class Partition(Dataset):
                  categorical_labels: dd.Series,
                  indices: pd.core.indexes.numeric.Int64Index):
         """
-        Create specialized `Dataset` objects for the train and test set partitions.
+        Create specialized `Dataset` object for the train or test set partitions.
 
         Parameters
         ----------
@@ -215,10 +215,10 @@ class Partition(Dataset):
             indices of samples selected for the partition
         """
 
-        self.indices = indices
         self.features = features
         self.labels = labels
         self.categorical_labels = categorical_labels
+        self.indices = indices
         self.size = indices.size
 
         self.describe()
