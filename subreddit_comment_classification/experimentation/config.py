@@ -42,7 +42,7 @@ class Config:
                            'features_filepaths' : list,
                            'preprocessors' : list,
                            'preprocessing_pipeline' : dict,
-                           'write_preprocessed_data_filepath' : str,
+                           'write_preprocessed_data_directory' : str,
                            'extractor' : Any,
                            'extractor_kwargs' : dict,
                            'write_features_filepath' : str,
