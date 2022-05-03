@@ -111,21 +111,40 @@ class Dataset:
 
 
     def load_from_raw_data_directory(self, config: Config) -> None:
-        """Read and merge all CSVs in the specified directory that end in "_cleaned"."""
+        """
+        Read and merge all files in the specified directory that end in "_cleaned".
 
-        raw_data_filepaths = config.raw_data_directory.glob('*_cleaned.csv')
-        self.raw_data_filepaths = list(raw_data_filepaths)
-        self.raw_data = dd.read_csv(self.raw_data_filepaths,
-                                    blocksize=1e8,
-                                    dtype=object)
+        Search first for Parquet files, and if none are found, search for CSV files.
+        """
+
+        raw_data_filepaths = config.raw_data_directory.glob('*_cleaned.parquet')
+        self.raw_data_filepaths = list(raw_data_filepaths) or None
+
+        if self.raw_data_filepaths is not None:
+            reader = dd.read_parquet
+        else:
+            raw_data_filepaths = config.raw_data_directory.glob('*_cleaned.csv')
+            self.raw_data_filepaths = list(raw_data_filepaths)
+            reader = dd.read_csv
+
+        self.raw_data = reader(self.raw_data_filepaths, blocksize=1e8, dtype=object)
+
 
     def load_from_raw_data_filepaths(self, config: Config) -> None:
         """Read and merge all CSVs enumerated in the config."""
 
         self.raw_data_filepaths = list(config.raw_data_filepaths)
-        self.raw_data = dd.read_csv(self.raw_data_filepaths,
-                                    blocksize=1e8,
-                                    dtype=object)
+        ftype = set(p.suffix for p in self.raw_data_filepaths)
+
+        if ftype == {'.parquet'}:
+            reader = dd.read_parquet
+        elif ftype == {'.csv'}:
+            reader = dd.read_csv
+        else:
+            err = 'All raw data files must be in either .csv or .parquet format.'
+            raise TypeError(err)
+
+        self.raw_data = reader(self.raw_data_filepaths, blocksize=1e8, dtype=object)
 
 
     def partition(self, config: Config) -> None:
