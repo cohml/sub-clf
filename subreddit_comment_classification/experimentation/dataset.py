@@ -15,7 +15,7 @@ from sklearn.preprocessing import LabelBinarizer
 
 from experimentation.available import AVAILABLE
 from experimentation.config import Config
-from experimentation.feature_savers_loaders import FEATURE_SAVERS, FEATURE_LOADERS
+from experimentation.feature_savers_loaders import FEATURE_LOADERS
 from preprocessing.abstract import MultiplePreprocessorPipeline
 from utils.misc import pretty_dumps
 
@@ -85,11 +85,6 @@ class Dataset:
 
         extractor = extractor(**config.extractor_kwargs)
         self.features = extractor.fit_transform(self.preprocessed_data)
-
-        if 'write_features_filepath' in config:
-            config.write_features_filepath.parent.mkdir(exist_ok=True, parents=True)
-            feature_saver = FEATURE_SAVERS[config.extractor]
-            feature_saver(config.write_features_filepath, self.features)
 
 
     def load_from_features_directory(self, config: Config) -> None:
@@ -183,12 +178,6 @@ class Dataset:
             pipeline = MultiplePreprocessorPipeline(*initialized_preprocessors)
 
         self.preprocessed_data = pipeline.preprocess(self.raw_data.body)
-
-        if 'write_preprocessed_data_directory' in config:
-            config.write_preprocessed_data_directory.parent.mkdir(exist_ok=True,
-                                                                  parents=True)
-            self.preprocessed_data.to_csv(config.write_preprocessed_data_directory,
-                                          index=False)
 
 
 class Partition(Dataset):

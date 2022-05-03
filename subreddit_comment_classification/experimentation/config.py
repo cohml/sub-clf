@@ -3,7 +3,6 @@ Object that parses and validates a config file enumerating experimental paramete
 """
 
 
-import logging
 import yaml
 
 from pathlib import Path
@@ -22,11 +21,17 @@ class Config:
         self._confirm_parameter_value_dtypes()
 
         for parameter, value in self.dict.items():
-            if parameter.endswith(('directory', 'filepath')):
+            if parameter.endswith('directory'):
                 value = full_path(value)
             elif parameter.endswith('filepaths'):
                 value = [full_path(path) for path in value]
             setattr(self, parameter, value)
+
+        output_flags = ['save_features', 'save_metadata', 'save_model',
+                        'save_preprocessed_data', 'save_train_test_indices']
+        for output_flag in output_flags:
+            if output_flag not in self:
+                setattr(self, parameter, False)
 
 
     def __contains__(self, parameter) -> None:
@@ -36,29 +41,37 @@ class Config:
     def _confirm_parameter_value_dtypes(self) -> None:
         """Confirm all defined parameters are understood and of the correct types."""
 
-        dtypes_by_field = {'raw_data_directory' : str,
-                           'raw_data_filepaths' : list,
-                           'features_directory' : str,
-                           'features_filepaths' : list,
-                           'preprocessors' : list,
-                           'preprocessing_pipeline' : dict,
-                           'write_preprocessed_data_directory' : str,
-                           'extractor' : Any,
-                           'extractor_kwargs' : dict,
-                           'write_features_filepath' : str,
-                           'train_test_split_kwargs' : dict}
+        dtypes_by_field = {
+            'extractor' : Any,
+            'extractor_kwargs' : dict,
+            'features_directory' : str,
+            'features_filepaths' : list,
+            'model' : Any,
+            'model_kwargs' : dict,
+            'output_directory' : str,
+            'overwrite_existing' : bool,
+            'preprocessors' : list,
+            'preprocessing_pipeline' : dict,
+            'raw_data_directory' : str,
+            'raw_data_filepaths' : list,
+            'save_features' : bool,
+            'save_model' : bool,
+            'save_preprocessed_data' : bool,
+            'save_train_test_indices' : bool,
+            'train_test_split_kwargs' : dict
+        }
 
         err = None
         for field, dtype in dtypes_by_field.items():
-            if field not in self.dict or field == 'extractor':
+            if field not in self.dict or field in {'extractor', 'model'}:
                 continue
 
             if not isinstance(self.dict[field], dtype):
                 err = f'"{field}" is the incorrect data type. Expected {dtype}.'
 
-            elif field.endswith('paths'):
-                for path in self.dict[field]:
-                    if not isinstance(path, str):
+            elif field.endswith('filepaths'):
+                for filepath in self.dict[field]:
+                    if not isinstance(filepath, str):
                         err = f'All entries under "{field}" must be {str}.'
 
         if err is not None:
@@ -127,8 +140,8 @@ class Config:
             err = conflicting_err.format('may optionally', 'features_directory', 'features_filepath')
 
         else:
-            required_fields = ['extractor', 'extractor_kwargs',
-                               'train_test_split_kwargs']
+            required_fields = ['extractor', 'extractor_kwargs', 'output_directory',
+                               'model', 'model_kwargs', 'train_test_split_kwargs']
             for required_field in required_fields:
                 if required_field not in self.dict:
                     err = missing_err.format(required_field)
