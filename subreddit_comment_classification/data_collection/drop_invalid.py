@@ -1,6 +1,6 @@
 """
-Remove bad rows from CSV files of scraped comment data, writing remainder to new CSV
-files with "_cleaned" appended to the filename.
+Remove bad rows from .parquet files of scraped comment data, writing remainder to new
+.parquet files with "_cleaned" appended to the filename.
 """
 
 
@@ -205,14 +205,15 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description='Apply assumptions and rule-based heuristics to identify and drop '
                     'invalid samples from data set, writing the cleaned results to a '
-                    'new CSV file with the same name as the source plus "_cleaned".'
+                    'new .parquet file with the same name as the source plus the '
+                    'suffix "_cleaned".'
     )
     parser.add_argument(
         '-i', '--input-directory',
         type=full_path,
         default=DEFAULTS['PATHS']['DIRS']['ALL_FIELDS'],
-        help='path to directory with CSV files (one per subreddit) containing all '
-             'fields scraped from Reddit (default: %(default)s)'
+        help='path to directory with .parquet files (one per subreddit) containing '
+             'all fields scraped from Reddit (default: %(default)s)'
     )
     parser.add_argument(
         '-o', '--output-directory',
@@ -233,17 +234,17 @@ def main() -> None:
         print('created:', output_directory)
 
     safe_parsing_params = {'dtype' : object,
-                           'engine' : 'python',
+                           'engine' : 'fastparquet',
                            'on_bad_lines' : 'skip'}
 
-    for subreddit in args.input_directory.glob('*.csv'):
+    for subreddit in args.input_directory.glob('*.parquet'):
 
         if subreddit.stem.endswith('_cleaned'):
             continue
 
         print('-' * 100)
         print('reading:', subreddit.name)
-        df = pd.read_csv(subreddit, **safe_parsing_params)
+        df = pd.read_parquet(subreddit, **safe_parsing_params)
 
         df, nrows_original, nrows_final = drop_invalid_rows(df)
         print('dropped:', f'{nrows_original - nrows_final:,} rows '
@@ -252,8 +253,8 @@ def main() -> None:
         # ensure no columns contain mixed data types
         df = normalize_dtypes_by_column(df)
 
-        output_filename = output_directory / (subreddit.stem + '_cleaned.csv')
-        df.to_csv(output_filename, index=False)
+        output_filename = output_directory / (subreddit.stem + '_cleaned.parquet')
+        df.to_parquet(output_filename, index=False)
         print('written:', output_filename)
 
 

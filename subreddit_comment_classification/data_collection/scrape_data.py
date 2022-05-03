@@ -1,6 +1,6 @@
 """
-Use PRAW to pull comments from top and hot posts in one or more specified
-subreddits and write the results to a series of CSVs, one per subreddit.
+Use PRAW to pull comments from top and hot posts in one or more specified subreddits
+and write the results to a series of .parquet files, one per subreddit.
 """
 
 import argparse
@@ -218,14 +218,14 @@ def traverse_comment_threads(posts: List[praw.reddit.Submission],
     return comments
 
 
-def write_to_csv(comments: pd.DataFrame,
-                 subreddit: str,
-                 output_directory: Path
-                 ) -> None:
+def write_to_parquet(comments: pd.DataFrame,
+                     subreddit: str,
+                     output_directory: Path
+                     ) -> None:
     """
-    Write comments from a single subreddit to CSV in specified directory.
-    If output filename exists, meaning comments for the passed subreddit
-    have already been scraped and saved, then merge and overwrite.
+    Write comments from a single subreddit to a .parquet file in specified directory.
+    If output filename exists, meaning comments for the passed subreddit have already
+    been scraped and saved, then merge and overwrite.
 
     Parameters
     ----------
@@ -237,22 +237,24 @@ def write_to_csv(comments: pd.DataFrame,
         path to directory to write output files to
     """
 
-    output_file = output_directory / (subreddit + '.csv')
+    output_file = output_directory / (subreddit + '.parquet')
 
     if output_file.exists():
         logger.info(f'Merging subreddit "{subreddit}" '
                     f'-- new data with existing {output_file}')
-        comments = pd.concat([comments, pd.read_csv(output_file)])
+        comments = pd.concat([comments, pd.read_parquet(output_file,
+                                                        dtype=object,
+                                                        engine='fastparquet')])
 
     # drop useless columns containing praw technical metadata, and drop comments
     # scraped multiple times (which could happen if script failed previously, or
-    # occasionally for a post tagged as both "top" and "new"), then write to CSV
+    # occasionally for a post tagged as both "top" and "new"), then write to .parquet
     logger.info(f'Writing {output_file}')
     praw_junk = {'regex' : r'^_'}
     dropcols = comments.filter(**praw_junk).columns
     (comments.drop(columns=dropcols)
              .drop_duplicates(subset='id')
-             .to_csv(output_file, index=False))
+             .to_parquet(output_file, compression='gzip', index=False))
 
 
 def main() -> None:
@@ -283,7 +285,7 @@ def main() -> None:
 
     # optionally skip subreddits from which comments have already been scraped
     if args.resume:
-        already_scraped = [p.stem for p in args.output_directory.glob('*.csv')
+        already_scraped = [p.stem for p in args.output_directory.glob('*.parquet')
                            if not p.stem.endswith('_cleaned')]
         for subreddit in sorted(already_scraped, key=str.lower):
             if subreddit in subreddits:
@@ -307,7 +309,7 @@ def main() -> None:
         comments = pd.DataFrame(comments)
 
         # write to output
-        write_to_csv(comments, subreddit, args.output_directory)
+        write_to_parquet(comments, subreddit, args.output_directory)
 
         if args.sleep_duration > 0 and num_subreddit < num_subreddits:
             logger.info(f'Sleeping {args.sleep_duration} minutes ...')
