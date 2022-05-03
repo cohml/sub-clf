@@ -47,7 +47,10 @@ class EmbeddingsVectorizer:
               MINIMUM, ALL PUNCTUATION MARKS HAVE BEEN REMOVED.
         """
 
-        self.vocabulary = preprocessed_data.str.split().explode().unique()
+        self.vocabulary = (preprocessed_data.str.split()
+                                            .explode()
+                                            .unique()
+                                            .sort_values())
 
 
     def load_model(self, model: ModuleType) -> None:
