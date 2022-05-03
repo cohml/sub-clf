@@ -15,8 +15,8 @@ from sklearn.preprocessing import LabelBinarizer
 
 from experimentation.available import AVAILABLE
 from experimentation.config import Config
-from experimentation.feature_savers_loaders import FEATURE_LOADERS
 from preprocessing.abstract import MultiplePreprocessorPipeline
+from utils.io import FEATURE_LOADERS, RAW_DATA_LOADERS
 from utils.misc import pretty_dumps
 
 
@@ -118,35 +118,33 @@ class Dataset:
         """
 
         raw_data_filepaths = config.raw_data_directory.glob('*_cleaned.parquet')
-        self.raw_data_filepaths = list(raw_data_filepaths) or None
+        self.raw_data_filepaths = list(raw_data_filepaths)
 
-        if self.raw_data_filepaths is not None:
-            reader = dd.read_parquet
+        if self.raw_data_filepaths:
+            reader = RAW_DATA_LOADERS['parquet']
         else:
             raw_data_filepaths = config.raw_data_directory.glob('*_cleaned.csv')
             self.raw_data_filepaths = list(raw_data_filepaths)
-            reader = dd.read_csv
+            reader = RAW_DATA_LOADERS['csv']
 
-        self.raw_data = reader(self.raw_data_filepaths, blocksize=1e8, dtype=object)
-        self.raw_data = self.raw_data.dropna(subset=['body'])
+        self.raw_data = reader(self.raw_data_filepaths).dropna(subset=['body'])
 
 
     def load_from_raw_data_filepaths(self, config: Config) -> None:
         """Read and merge all CSVs enumerated in the config."""
 
         self.raw_data_filepaths = list(config.raw_data_filepaths)
-        ftype = set(p.suffix for p in self.raw_data_filepaths)
+        filetype = set(p.suffix for p in self.raw_data_filepaths)
 
-        if ftype == {'.parquet'}:
-            reader = dd.read_parquet
-        elif ftype == {'.csv'}:
-            reader = dd.read_csv
+        if filetype == {'.parquet'}:
+            reader = RAW_DATA_LOADERS['parquet']
+        elif filetype == {'.csv'}:
+            reader = RAW_DATA_LOADERS['csv']
         else:
             err = 'All raw data files must be in either .csv or .parquet format.'
             raise TypeError(err)
 
-        self.raw_data = reader(self.raw_data_filepaths, blocksize=1e8, dtype=object)
-        self.raw_data = self.raw_data.dropna(subset=['body'])
+        self.raw_data = reader(self.raw_data_filepaths).dropna(subset=['body'])
 
 
     def partition(self, config: Config) -> None:
