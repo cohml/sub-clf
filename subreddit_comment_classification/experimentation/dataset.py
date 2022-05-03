@@ -115,14 +115,17 @@ class Dataset:
 
         raw_data_filepaths = config.raw_data_directory.glob('*_cleaned.csv')
         self.raw_data_filepaths = list(raw_data_filepaths)
-        self.raw_data = dd.read_csv(self.raw_data_filepaths, dtype=object)
-
+        self.raw_data = dd.read_csv(self.raw_data_filepaths,
+                                    blocksize=1e8,
+                                    dtype=object)
 
     def load_from_raw_data_filepaths(self, config: Config) -> None:
         """Read and merge all CSVs enumerated in the config."""
 
         self.raw_data_filepaths = list(config.raw_data_filepaths)
-        self.raw_data = dd.read_csv(self.raw_data_filepaths, dtype=object)
+        self.raw_data = dd.read_csv(self.raw_data_filepaths,
+                                    blocksize=1e8,
+                                    dtype=object)
 
 
     def partition(self, config: Config) -> None:
