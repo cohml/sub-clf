@@ -104,7 +104,7 @@ class Config:
                     exception = ConfigFileError
                     err = ('Only a single preprocessing pipeline can be used. In your '
                            'config, please specify it as '
-                           '"{<pipeline_name> : {<pipeline_verbosity>}}".')
+                           '"{<pipeline_name> : {verbose: <bool>}}".')
                 else:
                     preprocessing_pipeline_kwargs, = field.values()
                     if not isinstance(preprocessing_pipeline_kwargs, dict):
