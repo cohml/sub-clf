@@ -92,39 +92,41 @@ AVAILABLE = {
             'KitchenSinkPreprocessor' : KitchenSinkPreprocessor
         }
     },
-    'SKLEARN_MODELS' : {
-        'AdaBoostClassifier': AdaBoostClassifier,
-        'AdaBoostRegressor': AdaBoostRegressor,
-        'BayesianRidge': BayesianRidge,
-        'DecisionTreeClassifier': DecisionTreeClassifier,
-        'DecisionTreeRegressor': DecisionTreeRegressor,
-        'ElasticNet': ElasticNet,
-        'GradientBoostingClassifier': GradientBoostingClassifier,
-        'GradientBoostingRegressor': GradientBoostingRegressor,
-        'HuberRegressor': HuberRegressor,
-        'KNeighborsClassifier': KNeighborsClassifier,
-        'KNeighborsRegressor': KNeighborsRegressor,
-        'Lars': Lars, 'Lasso': Lasso,
-        'LinearRegression': LinearRegression,
-        'LinearSVC': LinearSVC,
-        'LinearSVR': LinearSVR,
-        'LogisticRegression': LogisticRegression,
-        'MLPClassifier': MLPClassifier,
-        'MLPRegressor': MLPRegressor,
-        'MultinomialNB': MultinomialNB,
-        'RANSACRegressor': RANSACRegressor,
-        'RandomForestClassifier': RandomForestClassifier,
-        'RandomForestRegressor': RandomForestRegressor,
-        'Ridge': Ridge,
-        'RidgeClassifier': RidgeClassifier,
-        'SGDClassifier': SGDClassifier,
-        'SGDRegressor': SGDRegressor,
-        'SVC': SVC,
-        'SVR': SVR,
-        'TheilSenRegressor': TheilSenRegressor
-    },
-    'SPACY_MODELS' : {
-        'Lg' : lambda: en_core_web_lg.load(),
-        'Trf' : lambda: en_core_web_trf.load()
+    'MODELS' : {
+        'SKLEARN' : {
+            'AdaBoostClassifier': AdaBoostClassifier,
+            'AdaBoostRegressor': AdaBoostRegressor,
+            'BayesianRidge': BayesianRidge,
+            'DecisionTreeClassifier': DecisionTreeClassifier,
+            'DecisionTreeRegressor': DecisionTreeRegressor,
+            'ElasticNet': ElasticNet,
+            'GradientBoostingClassifier': GradientBoostingClassifier,
+            'GradientBoostingRegressor': GradientBoostingRegressor,
+            'HuberRegressor': HuberRegressor,
+            'KNeighborsClassifier': KNeighborsClassifier,
+            'KNeighborsRegressor': KNeighborsRegressor,
+            'Lars': Lars, 'Lasso': Lasso,
+            'LinearRegression': LinearRegression,
+            'LinearSVC': LinearSVC,
+            'LinearSVR': LinearSVR,
+            'LogisticRegression': LogisticRegression,
+            'MLPClassifier': MLPClassifier,
+            'MLPRegressor': MLPRegressor,
+            'MultinomialNB': MultinomialNB,
+            'RANSACRegressor': RANSACRegressor,
+            'RandomForestClassifier': RandomForestClassifier,
+            'RandomForestRegressor': RandomForestRegressor,
+            'Ridge': Ridge,
+            'RidgeClassifier': RidgeClassifier,
+            'SGDClassifier': SGDClassifier,
+            'SGDRegressor': SGDRegressor,
+            'SVC': SVC,
+            'SVR': SVR,
+            'TheilSenRegressor': TheilSenRegressor
+        },
+        'SPACY' : {
+            'Lg' : lambda: en_core_web_lg.load(),
+            'Trf' : lambda: en_core_web_trf.load()
+        }
     }
 }
