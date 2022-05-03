@@ -17,6 +17,6 @@ class Reddit:
     def __init__(self):
         """Log into Reddit's backend API."""
 
-        with CREDENTIALS_FILEPATH.open() as credentials_fh:
-            self.credentials = json.load(credentials_fh)
-            self.session = praw.Reddit(**self.credentials)
+        credentials = CREDENTIALS_FILEPATH.read_text()
+        self.credentials = json.loads(credentials)
+        self.session = praw.Reddit(**self.credentials)
