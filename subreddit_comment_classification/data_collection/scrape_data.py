@@ -244,7 +244,7 @@ def write_to_parquet(comments: pd.DataFrame,
                     f'-- new data with existing {output_file}')
         comments = pd.concat([comments, pd.read_parquet(output_file,
                                                         dtype=object,
-                                                        engine='fastparquet')])
+                                                        engine='pyarrow')])
 
     # drop useless columns containing praw technical metadata, and drop comments
     # scraped multiple times (which could happen if script failed previously, or

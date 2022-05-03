@@ -234,7 +234,7 @@ def main() -> None:
         print('created:', output_directory)
 
     safe_parsing_params = {'dtype' : object,
-                           'engine' : 'fastparquet',
+                           'engine' : 'pyarrow',
                            'on_bad_lines' : 'skip'}
 
     for subreddit in args.input_directory.glob('*.parquet'):

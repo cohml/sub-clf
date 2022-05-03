@@ -35,5 +35,5 @@ RAW_DATA_LOADERS = {
     'parquet' : partial(read_parquet,
                         dtype=object,
                         blocksize=1e8,
-                        engine='fastparquet')
+                        engine='pyarrow')
 }
