@@ -128,6 +128,7 @@ class Dataset:
             reader = dd.read_csv
 
         self.raw_data = reader(self.raw_data_filepaths, blocksize=1e8, dtype=object)
+        self.raw_data = self.raw_data.dropna(subset=['body'])
 
 
     def load_from_raw_data_filepaths(self, config: Config) -> None:
@@ -145,6 +146,7 @@ class Dataset:
             raise TypeError(err)
 
         self.raw_data = reader(self.raw_data_filepaths, blocksize=1e8, dtype=object)
+        self.raw_data = self.raw_data.dropna(subset=['body'])
 
 
     def partition(self, config: Config) -> None:
