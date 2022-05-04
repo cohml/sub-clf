@@ -12,8 +12,8 @@ from numpy import nan
 from pathlib import Path
 from typing import Tuple
 
-from ..utils.defaults import DEFAULTS
-from ..utils.misc import full_path
+from ..util.defaults import DEFAULTS
+from ..util.misc import full_path
 
 
 def drop_invalid_rows(df: pd.DataFrame) -> Tuple[pd.DataFrame, int, int]:

@@ -6,7 +6,7 @@ Object representing a Reddit session.
 import json
 import praw
 
-from ..utils.defaults import DEFAULTS
+from ..util.defaults import DEFAULTS
 
 
 CREDENTIALS_FILEPATH = DEFAULTS['PATHS']['FILES']['REDDIT_OAUTH_CREDENTIALS']

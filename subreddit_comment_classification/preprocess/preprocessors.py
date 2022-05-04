@@ -9,7 +9,7 @@ import re
 from string import punctuation, whitespace
 from sklearn.feature_extraction.text import strip_accents_ascii, strip_accents_unicode
 
-from preprocessing.abstract import SinglePreprocessor
+from preprocess.base import SinglePreprocessor
 
 
 class AccentRemover(SinglePreprocessor):

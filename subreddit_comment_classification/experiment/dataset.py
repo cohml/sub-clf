@@ -13,11 +13,12 @@ from scipy.sparse.base import spmatrix
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelBinarizer
 
-from experimentation.available import AVAILABLE
-from experimentation.config import Config
-from preprocessing.abstract import MultiplePreprocessorPipeline
-from utils.io import FEATURE_LOADERS, RAW_DATA_LOADERS
-from utils.misc import pretty_dumps
+from experiment.available import AVAILABLE
+from experiment.config import Config
+from preprocess.base import MultiplePreprocessorPipeline
+from util.defaults import DEFAULTS
+from util.io import FEATURE_LOADERS, RAW_DATA_LOADERS
+from util.misc import pretty_dumps
 
 
 class Dataset:

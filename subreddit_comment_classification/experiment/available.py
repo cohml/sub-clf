@@ -12,8 +12,8 @@ from sklearn.feature_extraction.text import (
 from embed.embeddings import LgEmbeddingsVectorizer, TrfEmbeddingsVectorizer
 
 ## ---- preprocessors
-from preprocessing.kitchen_sink import KitchenSinkPreprocessor
-from preprocessing.preprocessors import (
+from preprocess.kitchen_sink import KitchenSinkPreprocessor
+from preprocess.preprocessors import (
     AccentRemover,
     ApostropheNormalizer,
     CaseNormalizer,

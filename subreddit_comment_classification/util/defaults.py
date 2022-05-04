@@ -3,6 +3,7 @@ Default parameter values and other constants for importing into other scripts.
 """
 
 
+from multiprocessing import cpu_count
 from pathlib import Path
 
 
@@ -85,6 +86,7 @@ DEFAULTS = {
     'LOG' : {
         'FORMAT' : '%(asctime)s : %(levelname)s : %(module)s:%(funcName)s:%(lineno)d : %(message)s',
     },
+    'NCPUS' : cpu_count(),
     'PATHS' : {
         'FILES' : {
             'LOG_CONFIG' : PROJECT_DIR / 'meta' / 'logging.cfg',

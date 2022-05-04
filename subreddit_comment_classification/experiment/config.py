@@ -8,7 +8,7 @@ import yaml
 from pathlib import Path
 from typing import Any, Dict
 
-from utils.misc import full_path
+from util.misc import full_path
 
 
 class Config:
