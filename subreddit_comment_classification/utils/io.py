@@ -37,5 +37,5 @@ RAW_DATA_LOADERS = {
                         dtype=object,
                         blocksize=1e8,
                         engine='pyarrow',
-                        columns=['body', 'subreddit'])
+                        usecols=['body', 'subreddit'])
 }
