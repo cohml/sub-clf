@@ -1,6 +1,6 @@
 """
 Remove bad rows from .parquet files of scraped comment data, writing remainder to new
-.parquet files with "_cleaned" appended to the filename.
+.parquet files with "_cleaned" appended to the filenames.
 """
 
 

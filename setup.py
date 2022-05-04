@@ -39,8 +39,8 @@ setup(
     entry_points={
         'console_scripts':
             [
-                'clean = subreddit_comment_classification.scrape.drop_invalid:main',
-                'scrape = subreddit_comment_classification.scrape.scrape_data:main'
+                'clean = subreddit_comment_classification.scrape.clean:main',
+                'scrape = subreddit_comment_classification.scrape.scrape:main'
             ]
         },
 )
