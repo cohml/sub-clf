@@ -36,8 +36,11 @@ setup(
         'Operating System :: MacOS',
         'Programming Language :: Python :: 3.10'
     ],
-    entry_points={'console_scripts':
-                    ['scrape = subreddit_comment_classification.data_collection.scrape_data:main',
-                     'clean = subreddit_comment_classification.data_collection.drop_invalid:main'],
-                    },
+    entry_points={
+        'console_scripts':
+            [
+                'clean = subreddit_comment_classification.scrape.drop_invalid:main',
+                'scrape = subreddit_comment_classification.scrape.scrape_data:main'
+            ]
+        },
 )
