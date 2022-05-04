@@ -32,10 +32,10 @@ RAW_DATA_LOADERS = {
     'csv' : partial(read_csv,
                     dtype=object,
                     blocksize=1e8,
-                    columns=['body', 'subreddit']),
+                    usecols=['body', 'subreddit']),
     'parquet' : partial(read_parquet,
                         dtype=object,
                         blocksize=1e8,
                         engine='pyarrow',
-                        usecols=['body', 'subreddit'])
+                        columns=['body', 'subreddit'])
 }
