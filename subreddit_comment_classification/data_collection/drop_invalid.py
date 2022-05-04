@@ -233,10 +233,6 @@ def main() -> None:
         output_directory.mkdir(parents=True)
         print('created:', output_directory)
 
-    safe_parsing_params = {'dtype' : object,
-                           'engine' : 'pyarrow',
-                           'on_bad_lines' : 'skip'}
-
     for subreddit in args.input_directory.glob('*.parquet'):
 
         if subreddit.stem.endswith('_cleaned'):
@@ -244,7 +240,7 @@ def main() -> None:
 
         print('-' * 100)
         print('reading:', subreddit.name)
-        df = pd.read_parquet(subreddit, **safe_parsing_params)
+        df = pd.read_parquet(subreddit, engine='pyarrow')
 
         df, nrows_original, nrows_final = drop_invalid_rows(df)
         print('dropped:', f'{nrows_original - nrows_final:,} rows '

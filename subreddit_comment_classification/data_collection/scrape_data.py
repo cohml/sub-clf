@@ -242,9 +242,7 @@ def write_to_parquet(comments: pd.DataFrame,
     if output_file.exists():
         logger.info(f'Merging subreddit "{subreddit}" '
                     f'-- new data with existing {output_file}')
-        comments = pd.concat([comments, pd.read_parquet(output_file,
-                                                        dtype=object,
-                                                        engine='pyarrow')])
+        comments = pd.concat([comments, pd.read_parquet(output_file, engine='pyarrow')])
 
     # drop useless columns containing praw technical metadata, and drop comments
     # scraped multiple times (which could happen if script failed previously, or
@@ -254,6 +252,8 @@ def write_to_parquet(comments: pd.DataFrame,
     dropcols = comments.filter(**praw_junk).columns
     (comments.drop(columns=dropcols)
              .drop_duplicates(subset='id')
+             .astype({'author' : str, 'edited' : bool, 'subreddit' : str})
+             .applymap(lambda x: str(x) if x in ([], {}) else x)
              .to_parquet(output_file, compression='gzip', index=False))
 
 
