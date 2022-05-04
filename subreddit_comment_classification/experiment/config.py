@@ -8,6 +8,7 @@ import yaml
 from pathlib import Path
 from typing import Any, Dict
 
+from util.defaults import DEFAULTS
 from util.misc import full_path
 
 
@@ -20,18 +21,14 @@ class Config:
         self._confirm_required_parameters_exist()
         self._confirm_parameter_value_dtypes()
 
+        self.dict = DEFAULTS['CONFIG'] | self.dict
+
         for parameter, value in self.dict.items():
             if parameter.endswith('directory'):
                 value = full_path(value)
             elif parameter.endswith('filepaths'):
                 value = [full_path(path) for path in value]
             setattr(self, parameter, value)
-
-        output_flags = ['save_features', 'save_metadata', 'save_model',
-                        'save_preprocessed_data', 'save_train_test_indices']
-        for output_flag in output_flags:
-            if output_flag not in self:
-                setattr(self, parameter, False)
 
 
     def __contains__(self, parameter) -> None:
@@ -140,8 +137,7 @@ class Config:
             err = conflicting_err.format('may optionally', 'features_directory', 'features_filepath')
 
         else:
-            required_fields = ['extractor', 'extractor_kwargs', 'output_directory',
-                               'model', 'model_kwargs', 'train_test_split_kwargs']
+            required_fields = ['extractor', 'output_directory', 'model']
             for required_field in required_fields:
                 if required_field not in self.dict:
                     err = missing_err.format(required_field)

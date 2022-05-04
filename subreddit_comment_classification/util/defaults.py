@@ -10,6 +10,17 @@ from pathlib import Path
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 
 DEFAULTS = {
+    'CONFIG' : {
+        'extractor_kwargs' : {},
+        'model_kwargs' : {},
+        'overwrite_existing' : False,
+        'save_features': False,
+        'save_metadata': False,
+        'save_model': False,
+        'save_preprocessed_data': False,
+        'save_train_test_indices': False,
+        'train_test_split_kwargs': {}
+    },
     'IO' : {
         'DTYPES' : {
             'all_awardings' : 'object',
