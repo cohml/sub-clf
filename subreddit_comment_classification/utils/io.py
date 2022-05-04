@@ -31,9 +31,11 @@ FEATURE_SAVERS = {
 RAW_DATA_LOADERS = {
     'csv' : partial(read_csv,
                     dtype=object,
-                    blocksize=1e8),
+                    blocksize=1e8,
+                    columns=['body', 'subreddit']),
     'parquet' : partial(read_parquet,
                         dtype=object,
                         blocksize=1e8,
-                        engine='pyarrow')
+                        engine='pyarrow',
+                        columns=['body', 'subreddit'])
 }
