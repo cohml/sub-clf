@@ -4,6 +4,7 @@ and write the results to a series of .parquet files, one per subreddit.
 """
 
 import argparse
+import dask.dataframe as dd
 import logging
 import logging.config
 import pandas as pd
@@ -113,7 +114,7 @@ def scrape_posts(reddit: praw.Reddit,
                  limit: Optional[int]
                  ) -> Optional[List[praw.reddit.Submission]]:
     """
-    Scrape up to 1000 top + hot posts from each of the passed subreddits.
+    Scrape up to 1000 top + 1000 hot posts from each of the passed subreddits.
 
     Parameters
     ----------
@@ -182,6 +183,7 @@ def traverse_comment_threads(posts: List[praw.reddit.Submission],
             logger.info(f'Scraping subreddit "{post.subreddit.display_name}" ({subreddit_counter}) '
                         f'-- post "{post.id}" ({post_counter}) '
                         f'-- comment "{comment.id}" ({num_comment}/{post.num_comments})')
+            comment.post_id = post.id
             yield pd.Series(vars(comment))
 
             try:
@@ -237,24 +239,28 @@ def write_to_parquet(comments: pd.DataFrame,
         path to directory to write output files to
     """
 
-    output_file = output_directory / (subreddit + '.parquet')
+    subreddit_directory = output_directory / f'subreddit={subreddit}'
 
-    if output_file.exists():
-        logger.info(f'Merging subreddit "{subreddit}" '
-                    f'-- new data with existing {output_file}')
-        comments = pd.concat([comments, pd.read_parquet(output_file, engine='pyarrow')])
+    if subreddit_directory.exists():
+        logger.info(f'Merging new and existing comments for subreddit "{subreddit}"')
+
+        new_comments = comments
+        existing_comments = pd.read_parquet(subreddit_directory, engine='pyarrow')
+        comments = pd.concat([new_comments, existing_comments])
 
     # drop useless columns containing praw technical metadata, and drop comments
     # scraped multiple times (which could happen if script failed previously, or
     # occasionally for a post tagged as both "top" and "new"), then write to .parquet
-    logger.info(f'Writing {output_file}')
+    logger.info(f'Writing {subreddit_directory}')
     praw_junk = {'regex' : r'^_'}
     dropcols = comments.filter(**praw_junk).columns
-    (comments.drop(columns=dropcols)
-             .drop_duplicates(subset='id')
-             .astype({'author' : str, 'edited' : bool, 'subreddit' : str})
-             .applymap(lambda x: str(x) if x in ([], {}) else x)
-             .to_parquet(output_file, compression='gzip', index=False))
+    stringify_empty_collections = lambda x: str(x) if x in ([], {}) else x
+    (dd.from_pandas(comments, npartitions=DEFAULTS['NCPUS'])
+       .drop(columns=dropcols)
+       .drop_duplicates(subset='id')
+       .astype({'author' : str, 'edited' : bool})
+       .applymap(stringify_empty_collections)
+       .to_parquet(output_directory, **DEFAULTS['IO']['TO_PARQUET_PARAMS']))
 
 
 def main() -> None:
@@ -307,6 +313,7 @@ def main() -> None:
         # scrape all comments across all scraped posts
         comments = traverse_comment_threads(posts, subreddit_counter)
         comments = pd.DataFrame(comments)
+        comments.subreddit = subreddit
 
         # write to output
         write_to_parquet(comments, subreddit, args.output_directory)
