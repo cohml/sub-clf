@@ -24,9 +24,9 @@ class Config:
         self.dict = DEFAULTS['CONFIG'] | self.dict
 
         for parameter, value in self.dict.items():
-            if parameter.endswith('directory'):
+            if parameter.endswith('directory') and value is not None:
                 value = full_path(value)
-            elif parameter.endswith('filepaths'):
+            elif parameter.endswith('filepaths') and value is not None:
                 value = [full_path(path) for path in value]
             setattr(self, parameter, value)
 

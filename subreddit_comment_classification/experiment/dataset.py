@@ -17,7 +17,7 @@ from experiment.available import AVAILABLE
 from experiment.config import Config
 from preprocess.base import MultiplePreprocessorPipeline
 from util.defaults import DEFAULTS
-from util.io import FEATURE_LOADERS, RAW_DATA_LOADERS
+from util.io import FEATURE_LOADERS, load_raw_data
 from util.misc import pretty_dumps
 
 
@@ -34,11 +34,7 @@ class Dataset:
             an object enumerating all parameters for your experiment
         """
 
-        if 'raw_data_directory' in config:
-            self.load_from_raw_data_directory(config)
-        else:
-            self.load_from_raw_data_filepaths(config)
-
+        self.load_raw_data(config)
         self.preprocess(config)
 
         self.labels = LabelBinarizer().fit_transform(self.raw_data.subreddit)
@@ -89,7 +85,7 @@ class Dataset:
 
 
     def load_from_features_directory(self, config: Config) -> None:
-        """Read and merge all CSVs enumerated in the config."""
+        """Read and merge all feature files enumerated in the config."""
 
         err = 'Loading features from a file is not yet implemented.'
         raise NotImplementedError(err)
@@ -101,7 +97,7 @@ class Dataset:
 
 
     def load_from_features_filepaths(self, config: Config) -> None:
-        """Read and merge all CSVs enumerated in the config."""
+        """Read and merge all feature files enumerated in the config."""
 
         err = 'Loading features from a file is not yet implemented.'
         raise NotImplementedError(err)
@@ -111,41 +107,12 @@ class Dataset:
         # self.features = dd.read_csv(self.features_filepaths)
 
 
-    def load_from_raw_data_directory(self, config: Config) -> None:
-        """
-        Read and merge all files in the specified directory.
+    def load_raw_data(self, config: Config) -> None:
+        """Read and merge all raw data in the specified directory/files."""
 
-        Search first for Parquet files, and if none are found, search for CSV files.
-        """
-
-        raw_data_filepaths = config.raw_data_directory.glob('*_clean.parquet')
-        self.raw_data_filepaths = list(raw_data_filepaths)
-
-        if self.raw_data_filepaths:
-            reader = RAW_DATA_LOADERS['parquet']
-        else:
-            raw_data_filepaths = config.raw_data_directory.glob('*_clean.csv')
-            self.raw_data_filepaths = list(raw_data_filepaths)
-            reader = RAW_DATA_LOADERS['csv']
-
-        self.raw_data = reader(self.raw_data_filepaths).dropna(subset=['body'])
-
-
-    def load_from_raw_data_filepaths(self, config: Config) -> None:
-        """Read and merge all CSVs enumerated in the config."""
-
-        self.raw_data_filepaths = list(config.raw_data_filepaths)
-        filetype = set(p.suffix for p in self.raw_data_filepaths)
-
-        if filetype == {'.parquet'}:
-            reader = RAW_DATA_LOADERS['parquet']
-        elif filetype == {'.csv'}:
-            reader = RAW_DATA_LOADERS['csv']
-        else:
-            err = 'All raw data files must be in either .csv or .parquet format.'
-            raise TypeError(err)
-
-        self.raw_data = reader(self.raw_data_filepaths).dropna(subset=['body'])
+        raw_data_columns = ['body', 'subreddit']
+        raw_data_source = config.raw_data_directory or config.raw_data_filepaths
+        self.raw_data = load_raw_data(raw_data_source, columns=raw_data_columns)
 
 
     def partition(self, config: Config) -> None:

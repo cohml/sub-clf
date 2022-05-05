@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Tuple
 
 from ..util.defaults import DEFAULTS
-from ..util.io import read_parquets
+from ..util.io import load_raw_data
 from ..util.misc import full_path
 
 
@@ -225,7 +225,7 @@ def main() -> None:
     output_directory = args.input_directory.parent / output_directory_basename
     output_directory.mkdir(exist_ok=True, parents=True)
 
-    df = read_parquets(args.input_directory)
+    df = load_raw_data(args.input_directory)
     df, nrows_original, nrows_final = drop_invalid_rows(df)
 
     ndropped = nrows_original - nrows_final

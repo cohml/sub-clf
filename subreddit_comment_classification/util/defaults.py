@@ -14,6 +14,8 @@ DEFAULTS = {
         'extractor_kwargs' : {},
         'model_kwargs' : {},
         'overwrite_existing' : False,
+        'raw_data_directory' : None,
+        'raw_data_filepaths' : None,
         'save_features': False,
         'save_metadata': False,
         'save_model': False,

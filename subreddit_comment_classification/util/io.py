@@ -10,16 +10,26 @@ from functools import partial
 from numpy import load, savez_compressed
 from pathlib import Path
 from scipy.sparse import load_npz, save_npz
+from typing import List, Union
 
 
-_read_parquet = partial(dd.read_parquet, blocksize=1e8, dtype=object, engine='pyarrow')
-
-
-def read_parquets(parent_directory: Path, subreddit: str = '*') -> dd.DataFrame:
+def load_raw_data(parent_directory: Union[List[Path], Path],
+                  subreddit: str = '*', **kwargs
+                 ) -> dd.DataFrame:
     """Read and concatenate .parquet across multiple subreddits."""
 
-    subreddit_directories = parent_directory.glob(f'subreddit={subreddit}')
-    parquets = map(_read_parquet, subreddit_directories)
+    read_parquet = partial(dd.read_parquet,
+                           engine='pyarrow',
+                           blocksize=1e8,
+                           dtype=object,
+                           **kwargs)
+
+    if isinstance(parent_directory, Path):
+        subreddit_directories = parent_directory.glob(f'subreddit={subreddit}')
+    else:
+        subreddit_directories = parent_directory
+
+    parquets = map(read_parquet, subreddit_directories)
     return dd.concat(list(parquets), ignore_index=True)
 
 
@@ -39,13 +49,4 @@ FEATURE_SAVERS = {
     'TfidfTransformer' : save_npz,
     'TfidfVectorizer' : save_npz,
     'TrfEmbeddingsVectorizer' : savez_compressed
-}
-
-RAW_DATA_LOADERS = {
-    'csv' : partial(dd.read_csv,
-                    dtype=object,
-                    blocksize=1e8,
-                    usecols=['body', 'subreddit']),
-    'parquet' : partial(_read_parquet,
-                        columns=['body', 'subreddit'])
 }
