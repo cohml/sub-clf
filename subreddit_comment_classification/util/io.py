@@ -14,22 +14,23 @@ from typing import List, Union
 
 
 def load_raw_data(parent_directory: Union[List[Path], Path],
-                  subreddit: str = '*', **kwargs
+                  subreddit: str = '*',
+                  **kwargs
                  ) -> dd.DataFrame:
     """Read and concatenate .parquet across multiple subreddits."""
 
-    read_parquet = partial(dd.read_parquet,
-                           engine='pyarrow',
-                           blocksize=1e8,
-                           dtype=object,
-                           **kwargs)
+    read_parquets = partial(dd.read_parquet,
+                            engine='pyarrow',
+                            blocksize=1e8,
+                            dtype=object,
+                            **kwargs)
 
     if isinstance(parent_directory, Path):
         subreddit_directories = parent_directory.glob(f'subreddit={subreddit}')
     else:
         subreddit_directories = parent_directory
 
-    parquets = map(read_parquet, subreddit_directories)
+    parquets = map(read_parquets, subreddit_directories)
     return dd.concat(list(parquets), ignore_index=True)
 
 
