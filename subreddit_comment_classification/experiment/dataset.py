@@ -113,18 +113,18 @@ class Dataset:
 
     def load_from_raw_data_directory(self, config: Config) -> None:
         """
-        Read and merge all files in the specified directory that end in "_cleaned".
+        Read and merge all files in the specified directory.
 
         Search first for Parquet files, and if none are found, search for CSV files.
         """
 
-        raw_data_filepaths = config.raw_data_directory.glob('*_cleaned.parquet')
+        raw_data_filepaths = config.raw_data_directory.glob('*_clean.parquet')
         self.raw_data_filepaths = list(raw_data_filepaths)
 
         if self.raw_data_filepaths:
             reader = RAW_DATA_LOADERS['parquet']
         else:
-            raw_data_filepaths = config.raw_data_directory.glob('*_cleaned.csv')
+            raw_data_filepaths = config.raw_data_directory.glob('*_clean.csv')
             self.raw_data_filepaths = list(raw_data_filepaths)
             reader = RAW_DATA_LOADERS['csv']
 

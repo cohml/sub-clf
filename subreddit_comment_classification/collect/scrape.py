@@ -296,8 +296,8 @@ def main() -> None:
 
     # optionally skip subreddits from which comments have already been scraped
     if args.resume:
-        already_scraped = [p.stem for p in args.output_directory.glob('*.parquet')
-                           if not p.stem.endswith('_cleaned')]
+        subreddit_directories = args.output_directory.glob('subreddit=*')
+        already_scraped = [p.name.split('=')[1] for p in subreddit_directories]
         for subreddit in sorted(already_scraped, key=str.lower):
             if subreddit in subreddits:
                 logger.info(f'Skipping subreddit "{subreddit}"')

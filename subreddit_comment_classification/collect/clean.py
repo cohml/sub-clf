@@ -1,7 +1,7 @@
 """
 Remove rows with any anomalous values from .parquet files of scraped comment data,
-writing the validated remainder to new .parquet files with "_cleaned" appended to the
-filenames.
+writing the validated remainder to new .parquet files in a new directory. The new
+directory will have the same name as the source directory plus the suffix "_clean".
 """
 
 
@@ -54,7 +54,7 @@ def drop_invalid_rows(df: pd.DataFrame) -> Tuple[pd.DataFrame, int, int]:
             .replace('', nan))  # b/c comments that were entirely quotation marks are now blank
     # drop rows with NaN entries in any of the following columns
     non_nan_columns = ['author', 'body', 'id', 'parent_id',
-                       'post_id', 'subreddit', 'subreddit_id']
+                        'post_id', 'subreddit', 'subreddit_id']
     df = df.loc[df[non_nan_columns].notnull().all(axis=1)]
 
     # drop rows whose bodies were deleted by mods or OP
@@ -206,7 +206,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description='Apply assumptions and rule-based heuristics to identify and drop '
                     'invalid samples from data set. Write cleaned results to a new '
-                    'directory named "<input-directory>_cleaned".'
+                    'directory named "<input-directory>_clean".'
     )
     parser.add_argument(
         'input_directory',
@@ -221,7 +221,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    output_directory_basename = args.input_directory.name + '_cleaned'
+    output_directory_basename = args.input_directory.name + '_clean'
     output_directory = args.input_directory.parent / output_directory_basename
     output_directory.mkdir(exist_ok=True, parents=True)
 
