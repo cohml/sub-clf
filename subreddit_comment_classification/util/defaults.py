@@ -101,7 +101,8 @@ DEFAULTS = {
         },
         'TO_PARQUET_PARAMS' : {
             'compression' : 'gzip',
-            'partition_on' : ['subreddit', 'post_id']
+            'partition_on' : ['subreddit', 'post_id'],
+            'write_index' : False
         }
     },
     'LOG' : {
