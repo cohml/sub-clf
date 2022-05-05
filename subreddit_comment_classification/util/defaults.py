@@ -12,6 +12,7 @@ PROJECT_DIR = Path(__file__).resolve().parent.parent
 DEFAULTS = {
     'CONFIG' : {
         'extractor_kwargs' : {},
+        'features_file' : None,
         'model_kwargs' : {},
         'overwrite_existing' : False,
         'raw_data_directory' : None,

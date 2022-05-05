@@ -24,7 +24,7 @@ class Config:
         self.dict = DEFAULTS['CONFIG'] | self.dict
 
         for parameter, value in self.dict.items():
-            if parameter.endswith('directory') and value is not None:
+            if parameter.endswith(('directory', 'file')) and value is not None:
                 value = full_path(value)
             elif parameter.endswith('filepaths') and value is not None:
                 value = [full_path(path) for path in value]
@@ -41,8 +41,7 @@ class Config:
         dtypes_by_field = {
             'extractor' : Any,
             'extractor_kwargs' : dict,
-            'features_directory' : str,
-            'features_filepaths' : list,
+            'features_file' : str,
             'model' : Any,
             'model_kwargs' : dict,
             'output_directory' : str,
@@ -117,24 +116,21 @@ class Config:
         """Confirm all requires parameters are defined in the config."""
 
         err = None
-        conflicting_err = ('Your config file {} contain either a "{}" field or a "{}" '
-                           'field, but not both.')
+        conflicting_err = ('Your config file must contain either a "{}" field or a '
+                           '"{}" field, but not both.')
         missing_err = 'Your config file must contain a "{}" field.'
 
         if 'raw_data_directory' not in self.dict and 'raw_data_filepaths' not in self.dict:
             err = missing_err.format('raw_data_directory" or a "raw_data_filepaths')
 
         elif 'raw_data_directory' in self.dict and 'raw_data_filepaths' in self.dict:
-            err = conflicting_err.format('must', 'raw_data_directory', 'raw_data_filepaths')
+            err = conflicting_err.format('raw_data_directory', 'raw_data_filepaths')
 
         elif 'preprocessors' not in self.dict and 'preprocessing_pipeline' not in self.dict:
             err = missing_err.format('preprocessors" or a "preprocessing_pipeline')
 
         elif 'preprocessors' in self.dict and 'preprocessing_pipeline' in self.dict:
-            err = conflicting_err.format('must', 'preprocessors', 'preprocessing_pipeline')
-
-        elif 'features_directory' in self.dict and 'features_filepaths' in self.dict:
-            err = conflicting_err.format('may optionally', 'features_directory', 'features_filepath')
+            err = conflicting_err.format('preprocessors', 'preprocessing_pipeline')
 
         else:
             required_fields = ['extractor', 'output_directory', 'model']

@@ -41,10 +41,8 @@ class Dataset:
         self.categorical_labels = self.raw_data.subreddit
         self.size = self.preprocessed_data.index.size.compute()
 
-        if 'features_directory' in config:
-            self.load_from_features_directory(config)
-        elif 'features_filepaths' in config:
-            self.load_from_features_filepaths(config)
+        if config.features_file is not None:
+            self.load_features(config)
         else:
             self.extract_features(config)
 
@@ -84,27 +82,16 @@ class Dataset:
         self.features = extractor.fit_transform(self.preprocessed_data)
 
 
-    def load_from_features_directory(self, config: Config) -> None:
-        """Read and merge all feature files enumerated in the config."""
+    def load_features(self, config: Config) -> None:
+        """Read in feature values from the specified file."""
+
+        # see imported `FEATURE_LOADERS` object for bespoke feature-loading functions,
+        # which vary by feature extractor
 
         err = 'Loading features from a file is not yet implemented.'
         raise NotImplementedError(err)
 
-        # see imported `FEATURE_LOADERS` object for bespoke feature-loading functions
-        # features_filepaths = config.features_directory.glob('*_features.csv')
-        # self.features_filepaths = list(features_filepaths)
-        # self.features = dd.read_csv(self.features_filepaths)
-
-
-    def load_from_features_filepaths(self, config: Config) -> None:
-        """Read and merge all feature files enumerated in the config."""
-
-        err = 'Loading features from a file is not yet implemented.'
-        raise NotImplementedError(err)
-
-        # see imported `FEATURE_LOADERS` object for bespoke feature-loading functions
-        # self.features_filepaths = list(config.features_filepaths)
-        # self.features = dd.read_csv(self.features_filepaths)
+        self.features = None
 
 
     def load_raw_data(self, config: Config) -> None:
