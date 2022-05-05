@@ -248,6 +248,10 @@ def write_to_parquet(comments: pd.DataFrame,
         existing_comments = pd.read_parquet(subreddit_directory, engine='pyarrow')
         comments = pd.concat([new_comments, existing_comments])
 
+    # just a few coarse checks to remove potentially corrupted rows before daskification
+    comments = (comments.dropna(subset='subreddit')
+                        .loc[lambda df: df.subreddit.str.split().str.len() == 1])
+
     # drop useless columns containing praw technical metadata, and drop comments
     # scraped multiple times (which could happen if script failed previously, or
     # occasionally for a post tagged as both "top" and "new"), then write to .parquet
