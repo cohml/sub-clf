@@ -284,8 +284,9 @@ def main() -> None:
         log_filepath_handler.setFormatter(formatter)
         logger.addHandler(log_filepath_handler)
 
-    # connect to reddit
+    # programmatically log into reddit
     reddit = Reddit()
+    reddit.login()
 
     # get list of subs to scrape data from
     if args.subreddits:
