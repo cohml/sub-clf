@@ -39,7 +39,8 @@ class Dataset:
 
         self.labels = LabelBinarizer().fit_transform(self.raw_data.subreddit)
         self.categorical_labels = self.raw_data.subreddit
-        self.size = self.preprocessed_data.index.size.compute()
+        self.ids = self.raw_data.id
+        self.size = len(self)
 
         if config.features_file is not None:
             self.load_features(config)
@@ -48,6 +49,10 @@ class Dataset:
 
         self.describe()
         self.partition(config)
+
+
+    def __len__(self):
+        return len(self.ids)
 
 
     def describe(self) -> None:     # TODO
@@ -97,7 +102,7 @@ class Dataset:
     def load_raw_data(self, config: Config) -> None:
         """Read and merge all raw data in the specified directory/files."""
 
-        raw_data_columns = ['body', 'subreddit']
+        raw_data_columns = ['body', 'id', 'subreddit']
         raw_data_source = config.raw_data_directory or config.raw_data_filepaths
         self.raw_data = load_raw_data(raw_data_source, columns=raw_data_columns)
 
@@ -105,18 +110,20 @@ class Dataset:
     def partition(self, config: Config) -> None:
         """Split data into train and test sets."""
 
-        indices = self.preprocessed_data.index.compute()
-        train, test = train_test_split(indices, **config.train_test_split_kwargs)
+        subreddits = self.raw_data.subreddit.compute()
+        ids = self.raw_data.id.compute()
 
-        self.train_set = Partition(self.features[train],
-                                   self.labels[train],
-                                   self.raw_data.loc[train, 'subreddit'],
-                                   indices=train)
+        train, test = train_test_split(ids.index, **config.train_test_split_kwargs)
 
-        self.test_set = Partition(self.features[test],
-                                  self.labels[test],
-                                  self.raw_data.loc[test, 'subreddit'],
-                                  indices=test)
+        self.train = Partition(features=self.features[train],
+                               labels=self.labels[train],
+                               categorical_labels=subreddits[train],
+                               ids=ids[train])
+
+        self.test = Partition(features=self.features[test],
+                              labels=self.labels[test],
+                              categorical_labels=subreddits[test],
+                              ids=ids[test])
 
 
     def preprocess(self, config: Config) -> None:
@@ -163,27 +170,29 @@ class Partition(Dataset):
     def __init__(self,
                  features: Union[np.ndarray, spmatrix],
                  labels: np.ndarray,
-                 categorical_labels: dd.Series,
-                 indices: pd.core.indexes.numeric.Int64Index):
+                 categorical_labels: pd.Series,
+                 ids: pd.Series):
         """
         Create specialized `Dataset` object for the train or test set partitions.
 
         Parameters
         ----------
         features : Union[np.ndarray, spmatrix]
-            extracted features for the partition
+            extracted features
         labels : np.ndarray
-            binarized labels for the partition
-        categorical_labels : dd.Series
-            subreddit names for each sample in the partition; useful for `describe`
-        indices : pd.core.indexes.numeric.Int64Index
-            indices of samples selected for the partition
+            binarized labels
+        categorical_labels : pd.Series
+            subreddit names - useful for `describe`
+        ids : pd.Series
+            comment IDs
         """
+
+        npartitions = {'npartitions' : DEFAULTS['NCPUS']}
 
         self.features = features
         self.labels = labels
-        self.categorical_labels = categorical_labels
-        self.indices = indices
-        self.size = indices.size
+        self.categorical_labels = dd.from_pandas(categorical_labels, **npartitions)
+        self.ids = dd.from_pandas(ids, **npartitions)
+        self.size = ids.size
 
         self.describe()

@@ -53,7 +53,7 @@ class Config:
             'save_features' : bool,
             'save_model' : bool,
             'save_preprocessed_data' : bool,
-            'save_train_test_indices' : bool,
+            'save_train_test_ids' : bool,
             'train_test_split_kwargs' : dict
         }
 

@@ -21,7 +21,7 @@ DEFAULTS = {
         'save_metadata': False,
         'save_model': False,
         'save_preprocessed_data': False,
-        'save_train_test_indices': False,
+        'save_train_test_ids': False,
         'train_test_split_kwargs': {}
     },
     'IO' : {
