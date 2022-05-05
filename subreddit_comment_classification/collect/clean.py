@@ -54,7 +54,7 @@ def drop_invalid_rows(df: pd.DataFrame) -> Tuple[pd.DataFrame, int, int]:
             .replace('', nan))  # b/c comments that were entirely quotation marks are now blank
     # drop rows with NaN entries in any of the following columns
     non_nan_columns = ['author', 'body', 'id', 'parent_id',
-                        'post_id', 'subreddit', 'subreddit_id']
+                       'post_id', 'subreddit', 'subreddit_id']
     df = df.loc[df[non_nan_columns].notnull().all(axis=1)]
 
     # drop rows whose bodies were deleted by mods or OP
@@ -114,6 +114,7 @@ def normalize_dtypes_by_column(df: pd.DataFrame) -> pd.DataFrame:
                           'comment_type',
                           'editable',
                           'likes',
+                          'media_metadata',
                           'mod_note',
                           'mod_reason_by',
                           'mod_reports',
