@@ -12,6 +12,8 @@ from pathlib import Path
 from scipy.sparse import load_npz, save_npz
 from typing import List, Union
 
+from util.defaults import DEFAULTS
+
 
 def load_raw_data(parent_directory: Union[List[Path], Path],
                   subreddit: str = '*',
@@ -19,19 +21,15 @@ def load_raw_data(parent_directory: Union[List[Path], Path],
                  ) -> dd.DataFrame:
     """Read and concatenate .parquet across multiple subreddits."""
 
-    read_parquets = partial(dd.read_parquet,
-                            engine='pyarrow',
-                            blocksize=1e8,
-                            dtype=object,
-                            **kwargs)
+    _read_parquet = partial(dd.read_parquet, **DEFAULTS['IO']['READ_PARQUET_KWARGS'])
 
     if isinstance(parent_directory, Path):
         subreddit_directories = parent_directory.glob(f'subreddit={subreddit}')
     else:
         subreddit_directories = parent_directory
 
-    parquets = map(read_parquets, subreddit_directories)
-    return dd.concat(list(parquets), ignore_index=True)
+    parquets = map(_read_parquet, subreddit_directories)
+    return dd.concat(list(parquets))
 
 
 FEATURE_LOADERS = {
