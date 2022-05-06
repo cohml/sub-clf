@@ -278,7 +278,8 @@ def write_to_parquet(comments: pd.DataFrame,
         logger.info(f'Merging new and existing comments for subreddit "{subreddit}"')
         existing_comments = dd.read_parquet(subreddit_directory,
                                             **DEFAULTS['IO']['READ_PARQUET_KWARGS'])
-        comments = dd.concat([comments, existing_comments])
+        comments = pd.concat([comments,
+                              existing_comments.astype(comments.dtypes).compute()])
 
     # some posts may be both "top' and "hot", so drop duplicates just to be safe
     comments = comments.loc[~comments.index.duplicated()]
