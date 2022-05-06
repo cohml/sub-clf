@@ -34,22 +34,22 @@ class SinglePreprocessor(BaseEstimator, TransformerMixin):
         return self
 
 
-    def preprocess(self, body: dd.Series):
+    def preprocess(self, text: dd.Series):
         """
         Apply preprocessing step to comments.
 
         Parameters
         ----------
-        body : dd.Series
+        text : dd.Series
             raw comment texts
 
         Returns
         -------
-        processed_body : dd.Series
+        processed_text : dd.Series
             processed comment texts
         """
 
-        return self.fit_transform(body)
+        return self.fit_transform(text)
 
 
 class MultiplePreprocessorPipeline:
@@ -81,22 +81,22 @@ class MultiplePreprocessorPipeline:
                                  memory='cache_directory')
 
 
-    def preprocess(self, body: dd.Series, ncores: int = 1):
+    def preprocess(self, text: dd.Series, ncores: int = 1):
         """
         Apply parallelized pipeline of preprocessing steps to text.
 
         Parameters
         ----------
-        body : dd.Series
+        text : dd.Series
             raw comment texts
         ncores : int
             cores available for parallel computation
 
         Returns
         -------
-        processed_body : dd.Series
+        processed_text : dd.Series
             processed comment texts
         """
 
         with dask.config.set(pool=ThreadPoolExecutor(max_workers=ncores)):
-            return self.pipeline.fit_transform(body)
+            return self.pipeline.fit_transform(text)
