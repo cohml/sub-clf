@@ -10,7 +10,7 @@ from pathlib import Path
 _PARQUET_SCHEMA = {
     'comment_id' : 'str',
     'post_id' : 'str',
-    'subreddit' : 'category',
+    'subreddit' : 'str',
     'text' : 'str',
     'upvotes' : 'int64'
 }
