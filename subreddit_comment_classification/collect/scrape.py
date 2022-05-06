@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 formatter = logging.Formatter(DEFAULTS['LOG']['FORMAT'])
 
 
-def clean(comments: dd.DataFrame) -> dd.DataFrame:
+def clean(comments: pd.DataFrame) -> pd.DataFrame:
     """
     Perform some rudimentary data filtering and cleaning.
 
@@ -44,12 +44,12 @@ def clean(comments: dd.DataFrame) -> dd.DataFrame:
 
     Returns
     -------
-    comments : pd.DataFrame
+    comments : dd.DataFrame
         all scraped comments from a single subreddit
     """
 
     to_remove = {'[deleted]', '[removed]'}
-    comments = comments[~comments.text.isin(to_remove)]
+    comments = comments.loc[~comments.text.isin(to_remove)]
     comments.text = (comments.text.replace(r'["“”‟„⹂〞〟＂❝❞]', '', regex=True)
                                   .replace('', nan, regex=False))
 
@@ -284,8 +284,8 @@ def write_to_parquet(comments: pd.DataFrame,
     comments = comments.loc[~comments.index.duplicated()]
 
     logger.info(f'Writing {subreddit_directory}')
-    comments =  dd.from_pandas(comments, npartitions=DEFAULTS['NCPU'])
-    comments.to_parquet(output_directory, **DEFAULTS['IO']['TO_PARQUET_KWARGS'])
+    (dd.from_pandas(comments, npartitions=DEFAULTS['NCPU'])
+       .to_parquet(output_directory, **DEFAULTS['IO']['TO_PARQUET_KWARGS']))
 
 
 def main() -> None:
