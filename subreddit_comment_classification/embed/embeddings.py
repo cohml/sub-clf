@@ -18,7 +18,7 @@ from embed.base import EmbeddingsVectorizer
 class LgEmbeddingsVectorizer(EmbeddingsVectorizer):
 
     @overrides
-    def fit_transform(self, v: dd.Series) -> np.ndarray:
+    def fit_transform(self, preprocessed_text: dd.Series) -> np.ndarray:
         """
         Use spacy's `en_core_web_lg` language model to construct a matrix of pretrained
         word embeddings for the passed preprocessed comments.
