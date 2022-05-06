@@ -11,7 +11,7 @@ import pandas as pd
 import praw
 
 from datetime import datetime
-from multiprocessing import cup_count
+from multiprocessing import cpu_count
 from numpy import nan
 from pathlib import Path
 from prawcore.exceptions import Forbidden
