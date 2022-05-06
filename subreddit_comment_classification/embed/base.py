@@ -29,17 +29,17 @@ class EmbeddingsVectorizer:
         return embeddings_matrix
 
 
-    def fit_transform(self, preprocessed_data: dd.Series) -> np.ndarray:
+    def fit_transform(self, preprocessed_text: dd.Series) -> np.ndarray:
         """
         Build up lexicon of unique tokens across all comments and use it to construct a
         matrix of pretrained word embeddings using a spacy model.
         """
 
-        self.get_vocabulary(preprocessed_data)
+        self.get_vocabulary(preprocessed_text)
         return self.build_embeddings_matrix()
 
 
-    def get_vocabulary(self, preprocessed_data: dd.Series) -> None:                   ### METHOD MAY NEED REFINEMENT
+    def get_vocabulary(self, preprocessed_text: dd.Series) -> None:                   ### METHOD MAY NEED REFINEMENT
         """
         Build lexicon of all unique tokens across all passed preprocessed comments.
 
@@ -47,7 +47,7 @@ class EmbeddingsVectorizer:
               MINIMUM, ALL PUNCTUATION MARKS HAVE BEEN REMOVED.
         """
 
-        self.vocabulary = (preprocessed_data.str.split()
+        self.vocabulary = (preprocessed_text.str.split()
                                             .explode()
                                             .unique()
                                             .sort_values())

@@ -18,38 +18,38 @@ from embed.base import EmbeddingsVectorizer
 class LgEmbeddingsVectorizer(EmbeddingsVectorizer):
 
     @overrides
-    def fit_transform(self, preprocessed_data: dd.Series) -> np.ndarray:
+    def fit_transform(self, v: dd.Series) -> np.ndarray:
         """
         Use spacy's `en_core_web_lg` language model to construct a matrix of pretrained
         word embeddings for the passed preprocessed comments.
 
         Parameters
         ----------
-        preprocessed_data : dd.Series
-            preprocessed comments raw text
+        preprocessed_text : dd.Series
+            preprocessed comment texts
 
         Returns
         -------
         embedding_matrix : np.ndarray
-            matrix of pre-trained word embeddings for the passed preprocessed comments
+            matrix of pre-trained word embeddings for the preprocessed comment texts
         """
 
         self.load_model(en_core_web_lg)
-        embeddings_matrix = super().fit_transform(preprocessed_data)
+        embeddings_matrix = super().fit_transform(preprocessed_text)
         return embeddings_matrix
 
 
 class TrfEmbeddingsVectorizer(EmbeddingsVectorizer):
 
     @overrides
-    def fit_transform(self, preprocessed_data: dd.Series) -> np.ndarray:
+    def fit_transform(self, preprocessed_text: dd.Series) -> np.ndarray:
         """
         Use spacy's `en_core_web_lg` language model to construct a matrix of pretrained
         word embeddings for the passed preprocessed comments.
 
         Parameters
         ----------
-        preprocessed_data : dd.Series
+        preprocessed_text : dd.Series
             preprocessed comments raw text
 
         Returns
@@ -67,5 +67,5 @@ class TrfEmbeddingsVectorizer(EmbeddingsVectorizer):
         raise NotImplementedError(err)
 
         # self.load_model(en_core_web_trf)
-        # embeddings_matrix = super().fit_transform(preprocessed_data)
+        # embeddings_matrix = super().fit_transform(preprocessed_text)
         # return embeddings_matrix

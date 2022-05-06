@@ -52,7 +52,7 @@ class Config:
             'raw_data_filepaths' : list,
             'save_features' : bool,
             'save_model' : bool,
-            'save_preprocessed_data' : bool,
+            'save_preprocessed_texts' : bool,
             'save_train_test_ids' : bool,
             'train_test_split_kwargs' : dict
         }

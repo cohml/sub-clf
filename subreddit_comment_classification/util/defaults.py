@@ -20,7 +20,7 @@ DEFAULTS = {
         'save_features': False,
         'save_metadata': False,
         'save_model': False,
-        'save_preprocessed_data': False,
+        'save_preprocessed_texts': False,
         'save_train_test_ids': False,
         'train_test_split_kwargs': {}
     },
@@ -117,8 +117,7 @@ DEFAULTS = {
             'REDDIT_OAUTH_CREDENTIALS' : PROJECT_DIR / 'meta' / 'credentials.json'
         },
         'DIRS' : {
-            'ALL_FIELDS' : PROJECT_DIR / 'data' / 'all_fields',
-            'BODY_ONLY' : PROJECT_DIR / 'data' / 'body_only',
+            'ALL_FIELDS' : _PROJECT_DIR / 'data' / 'all_fields',
         }
     }
 }
