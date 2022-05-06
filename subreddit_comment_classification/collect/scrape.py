@@ -11,6 +11,7 @@ import pandas as pd
 import praw
 
 from datetime import datetime
+from numpy import nan
 from pathlib import Path
 from prawcore.exceptions import Forbidden
 from time import sleep
@@ -25,6 +26,33 @@ from ..util.misc import full_path
 logging.config.fileConfig(DEFAULTS['PATHS']['FILES']['LOG_CONFIG'])
 logger = logging.getLogger(__name__)
 formatter = logging.Formatter(DEFAULTS['LOG']['FORMAT'])
+
+
+def clean(comments: dd.DataFrame) -> dd.DataFrame:
+    """
+    Perform some rudimentary data filtering and cleaning.
+
+    Specifically, remove comments that were either deleted by the OP or removed by a
+    mod (because the body of such comments will also be gone), and remove all
+    quotation marks as these can mess with the parser.
+
+    Parameters
+    ----------
+    comments : pd.DataFrame
+        all scraped comments from a single subreddit
+
+    Returns
+    -------
+    comments : pd.DataFrame
+        all scraped comments from a single subreddit
+    """
+
+    to_remove = {'[deleted]', '[removed]'}
+    comments = comments[~comments.text.isin(to_remove)]
+    comments.text = (comments.text.replace(r'["“”‟„⹂〞〟＂❝❞]', '', regex=True)
+                                  .replace('', nan, regex=False))
+
+    return comments.dropna(subset=['text'])
 
 
 def get_subreddits(subreddits_filepath: Path) -> List[str]:
@@ -317,8 +345,10 @@ def main() -> None:
 
         # scrape all comments across all scraped posts
         comments = traverse_comment_threads(posts, subreddit_counter)
-        comments = pd.DataFrame(comments)
-        comments.subreddit = subreddit
+        comments = pd.DataFrame(comments).set_index('comment_id')
+
+        # clean comments
+        comments = clean(comments)
 
         # write to output
         write_to_parquet(comments, subreddit, args.output_directory)
