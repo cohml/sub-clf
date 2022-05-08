@@ -40,6 +40,7 @@ DEFAULTS = {
         },
         'TO_PARQUET_KWARGS' : {
             'compression' : 'gzip',
+            'name_function' : lambda i: f'{i+1:05}.parquet.gz',
             'partition_on' : ['subreddit', 'post_id'],
             'schema' : _PARQUET_SCHEMA
         },
