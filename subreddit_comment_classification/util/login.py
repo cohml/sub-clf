@@ -1,5 +1,5 @@
 """
-Object for navigating Reddits' back end API.
+Object for navigating Reddit's back end API.
 """
 
 
