@@ -1,6 +1,6 @@
 """
 Use PRAW to pull comments from top and hot posts in one or more specified subreddits
-and write the results to a series of .parquet files, one per subreddit.
+and write the results to a series of .parquet.gz files, one per subreddit.
 """
 
 import argparse
@@ -258,9 +258,9 @@ def write_to_parquet(comments: pd.DataFrame,
                      output_directory: Path
                      ) -> None:
     """
-    Write comments from a single subreddit to one or more .parquet files in specified
-    directory. If output filename exists, meaning comments for the passed subreddit
-    have already been scraped and saved, then merge and overwrite.
+    Write comments from a single subreddit to one or more .parquet files.gz in the
+    specified directory. If output filename exists, meaning comments for the passed
+    subreddit have already been scraped and saved, then merge and overwrite.
 
     Parameters
     ----------

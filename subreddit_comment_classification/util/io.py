@@ -19,7 +19,7 @@ def load_raw_data(parent_directory: Union[List[Path], Path],
                   subreddit: str = '*',
                   **kwargs
                  ) -> dd.DataFrame:
-    """Read and concatenate .parquet across multiple subreddits."""
+    """Read and concatenate .parquet.gz files across multiple subreddits."""
 
     _read_parquet = partial(dd.read_parquet, **DEFAULTS['IO']['READ_PARQUET_KWARGS'])
 

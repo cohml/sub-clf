@@ -35,6 +35,12 @@ DEFAULTS = {
     'IO' : {
         'READ_PARQUET_KWARGS' : {
             'blocksize' : 1e8,
+            'dataset' : {
+                'require_extension' : (
+                    '.parquet',
+                    '.parquet.gz'
+                )
+            },
             'engine' : 'pyarrow',
             'index' : 'comment_id',
         },
@@ -42,7 +48,8 @@ DEFAULTS = {
             'compression' : 'gzip',
             'name_function' : lambda i: f'{i+1:05}.parquet.gz',
             'partition_on' : ['subreddit', 'post_id'],
-            'schema' : _PARQUET_SCHEMA
+            'schema' : _PARQUET_SCHEMA,
+            'write_metadata_file' : False
         },
     },
     'LOG' : {
