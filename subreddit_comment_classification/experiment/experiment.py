@@ -73,7 +73,8 @@ class Experiment:
         """Load Pytorch model."""
         # figure out pytorch models are loaded; currently i have zero clue
 
-        raise NotImplemented('Pytorch models are not yet supported by this library.')
+        err = 'Pytorch models are not yet supported by this library.'
+        raise NotImplementedError(err)
 
 
     def run(self): # main experiment logic here
