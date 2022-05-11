@@ -115,6 +115,12 @@ class Experiment:
         output_directory = self.config.output_directory
         output_directory.mkdir(**self.force)
 
+        self._save_config(output_directory)
+        self._save_report(output_directory)
+
+        if self.config.save_model:
+            self._save_model(output_directory)
+
         # initialize directory for all data-oriented outputs, if needed
         if any([self.config.save_train_test_ids,
                 self.config.save_preprocessed_texts,
@@ -131,12 +137,6 @@ class Experiment:
                 schema = to_parquet_kwargs['schema']
                 for useless_kwarg in ['partition_on', 'schema']:
                     to_parquet_kwargs.pop(useless_kwarg)
-
-        self._save_config(output_directory)
-        self._save_report(output_directory)
-
-        if self.config.save_model:
-            self._save_model(output_directory)
 
         if self.config.save_train_test_ids:
             self._save_ids(data_directory, partitions, to_parquet_kwargs, schema)
