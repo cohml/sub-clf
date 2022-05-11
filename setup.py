@@ -39,6 +39,7 @@ setup(
     entry_points={
         'console_scripts':
             [
+                'run = subreddit_comment_classification.util.run:run',
                 'scrape = subreddit_comment_classification.collect.scrape:main'
             ]
         },
