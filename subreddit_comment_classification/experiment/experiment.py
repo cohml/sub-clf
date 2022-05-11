@@ -17,6 +17,9 @@ import json
 import torch
 import yaml
 
+from pathlib import Path
+from typing import Any, Dict, List
+
 from .available import AVAILABLE
 from .config import Config
 from .dataset import Dataset
@@ -105,97 +108,151 @@ class Experiment:
             from) your config
         """
 
-        force = {'exist_ok' : self.config.overwrite_existing,
-                 'parents' : True}
+        self.force = {'exist_ok' : self.config.overwrite_existing,
+                      'parents' : True}
 
-        # create top-level output directory
+        # create top-level directory for all outputs
         output_directory = self.config.output_directory
-        output_directory.mkdir(**force)
+        output_directory.mkdir(**self.force)
 
-        # write config
-        config_directory = output_directory / 'config'
-        config_directory.mkdir(**force)
-        config_output_filepath = config_directory / 'config'
-        for config_saver, suffix in [(json.dump, '.json'), (yaml.safe_dump, '.yaml')]:
-            with config_output_filepath.with_suffix(suffix).open('w') as fh:
-                config_saver(self.config.dict, fh, indent=4, sort_keys=True)
-
-        # write report
-        pass # TODO
-
-        # optionally write model
-        if self.config.save_model:
-            model_directory = output_directory / 'model'
-            model_directory.mkdir(**force)
-            pass # TODO
-
+        # initialize directory for all data-oriented outputs, if needed
         if any([self.config.save_train_test_ids,
                 self.config.save_preprocessed_texts,
                 self.config.save_features,
                 self.config.save_metadata]):
             data_directory = output_directory / 'data'
-            data_directory.mkdir(**force)
+            data_directory.mkdir(**self.force)
             partitions = ['all', 'train', 'test']
 
-        to_parquet_kwargs = DEFAULTS['IO']['TO_PARQUET_KWARGS'].copy()
-        schema = to_parquet_kwargs['schema']
-        for useless_kwarg in ['partition_on', 'schema']:
-            to_parquet_kwargs.pop(useless_kwarg)
+            # set kwargs for writing .parquet.gz partitions, if needed
+            if any([self.config.save_train_test_ids,
+                    self.config.save_preprocessed_texts]):
+                to_parquet_kwargs = DEFAULTS['IO']['TO_PARQUET_KWARGS'].copy()
+                schema = to_parquet_kwargs['schema']
+                for useless_kwarg in ['partition_on', 'schema']:
+                    to_parquet_kwargs.pop(useless_kwarg)
 
-        # optionally write train/test comment IDs
+        self._save_config(output_directory)
+        self._save_report(output_directory)
+
+        if self.config.save_model:
+            self._save_model(output_directory)
+
         if self.config.save_train_test_ids:
-            for partition in partitions:
-                if partition == 'all':
-                    continue
-                partition_ids_directory = data_directory / partition / 'ids'
-                partition_ids_directory.mkdir(**force)
+            self._save_ids(data_directory, partitions, to_parquet_kwargs, schema)
+
+        if self.config.save_preprocessed_texts:
+            self._save_preprocessed_data(data_directory, partitions, to_parquet_kwargs)
+
+        if self.config.save_features:
+            self._save_features(data_directory, partitions)
+
+        if self.config.save_metadata:
+            self._save_metadata(data_directory, partitions)
+
+
+    def _save_config(self, output_directory: Path) -> None:
+        """Save config parameters in .json and .yaml formats."""
+
+        config_directory = output_directory / 'config'
+        config_directory.mkdir(**self.force)
+        config_output_filepath = config_directory / 'config'
+
+        config_savers = {'.json' : json.dump,
+                         '.yaml' : yaml.safe_dump}
+
+        for suffix, config_saver in config_savers.items():
+            with config_output_filepath.with_suffix(suffix).open('w') as fh:
+                config_saver(self.config.dict, fh, indent=4, sort_keys=True)
+
+
+    def _save_features(self, data_directory: Path, partitions: List[str]) -> None:
+        """Save features to .npz file."""
+
+        feature_saver = FEATURE_SAVERS[self.config.extractor]
+
+        for partition in partitions:
+            features_dir = data_directory / partition / 'features'
+            features_dir.mkdir(**self.force)
+            features_filepath = features_dir / 'features.npz'
+
+            if partition == 'all':
+                features = self.dataset.features
+            else:
+                features = getattr(self.dataset, partition).features
+
+            feature_saver(features_filepath, features)
+
+
+    def _save_ids(self,
+                  data_directory: Path,
+                  partitions: List[str],
+                  to_parquet_kwargs: Dict[str, Any],
+                  schema: Dict[str, Any]
+                  ) -> None:
+        """Save unique comment IDs for the train and test set partitions."""
+
+        for partition in partitions:
+            if partition == 'all':
+                continue
+
+            partition_ids_directory = data_directory / partition / 'ids'
+            partition_ids_directory.mkdir(**self.force)
+            partition_ids = getattr(self.dataset, partition).ids
+            (partition_ids.to_frame(name='comment_ids')
+                          .to_parquet(partition_ids_directory,
+                                      schema={'comment_id' : schema['comment_id']},
+                                      **to_parquet_kwargs))
+
+
+    def _save_metadata(self, data_directory: Path, partitions: List[str]) -> None:
+        """Save metadata to .csv."""
+
+        for partition in partitions:
+            metadata_directory = data_directory / partition / 'metadata'
+            metadata_directory.mkdir(**self.force)
+            metadata_filepath = metadata_directory / 'part_*.csv' # TODO
+
+            if partition == 'all':
+                metadata = ... # TODO
+            else:
+                metadata = ... # TODO
+
+            metadata.to_csv(metadata_filepath, index=False)
+
+
+    def _save_model(self, output_directory: Path) -> None:
+        """Save model to binary file."""
+
+        return # TODO
+
+        model_directory = output_directory / 'model'
+        model_directory.mkdir(**self.force)
+
+
+    def _save_preprocessed_data(self,
+                                data_directory: Path,
+                                partitions: List[str],
+                                to_parquet_kwargs: Dict[str, Any]
+                                ) -> None:
+        """Save preprocessed comment texts to .parquet.gz partitions."""
+        for partition in partitions:
+            preprocessed_text_directory = data_directory / partition / 'preprocessed_text'
+            preprocessed_text_directory.mkdir(**self.force)
+
+            if partition == 'all':
+                preprocessed_text = self.dataset.preprocessed_text
+            else:
                 partition_ids = getattr(self.dataset, partition).ids
-                (partition_ids.to_frame(name='comment_ids')
-                              .to_parquet(partition_ids_directory,
-                                          schema={'comment_id' : schema['comment_id']},
+                preprocessed_text = dd.from_array(self.dataset
+                                                      .preprocessed_text
+                                                      .compute()
+                                                      .loc[partition_ids])
+
+            (preprocessed_text.to_frame(name='text')
+                              .to_parquet(preprocessed_text_directory,
                                           **to_parquet_kwargs))
 
-        # optionally write preprocessed comment texts
-        if self.config.save_preprocessed_texts:
-            for partition in partitions:
-                preprocessed_text_directory = data_directory / partition / 'preprocessed_text'
-                preprocessed_text_directory.mkdir(**force)
-                if partition == 'all':
-                    preprocessed_text = self.dataset.preprocessed_text
-                else:
-                    partition_ids = getattr(self.dataset, partition).ids
-                    preprocessed_text = dd.from_array(self.dataset
-                                                          .preprocessed_text
-                                                          .compute()
-                                                          .loc[partition_ids])
-                (preprocessed_text.to_frame(name='text')
-                                  .to_parquet(preprocessed_text_directory,
-                                              **to_parquet_kwargs))
 
-        # optionally write features
-        if self.config.save_features:
-            feature_saver = FEATURE_SAVERS[self.config.extractor]
-            for partition in partitions:
-                features_dir = data_directory / partition / 'features'
-                features_dir.mkdir(**force)
-                features_filepath = features_dir / 'features.npz'
-                if partition == 'all':
-                    features = self.dataset.features
-                else:
-                    features = getattr(self.dataset, partition).features
-                feature_saver(features_filepath, features)
-
-        return
-
-        # optionally write metadata
-        if self.config.save_metadata:
-            for partition in partitions:
-                metadata_directory = data_directory / partition / 'metadata'
-                metadata_directory.mkdir(**force)
-                metadata_filepath = metadata_directory / 'part_*.csv'
-                if partition == 'all':
-                    metadata = ... # TODO
-                else:
-                    metadata = ... # TODO
-                metadata.to_csv(metadata_filepath,
-                                index=False)
+    def _save_report(self, output_directory: Path) -> None:
+        pass
