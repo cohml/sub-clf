@@ -42,6 +42,7 @@ class Config:
             'extractor' : Any,
             'extractor_kwargs' : dict,
             'features_file' : str,
+            'mode' : str,
             'model' : Any,
             'model_kwargs' : dict,
             'output_directory' : str,
@@ -133,11 +134,16 @@ class Config:
             err = conflicting_err.format('preprocessors', 'preprocessing_pipeline')
 
         else:
-            required_fields = ['extractor', 'output_directory', 'model']
+            required_fields = ['extractor', 'output_directory', 'mode', 'model']
             for required_field in required_fields:
                 if required_field not in self.dict:
                     err = missing_err.format(required_field)
                     break
+
+        mode = self.dict['mode']
+        if mode not in {'evaluate', 'train'}:
+            err = ('The "mode" parameter must be set to either "train" or "evaluate". '
+                   f'Got "{type(mode)}."')
 
         if err is not None:
             raise ConfigFileError(err)
