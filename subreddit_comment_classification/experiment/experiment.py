@@ -43,13 +43,23 @@ class Experiment:
         dataset : Dataset
             the data your model will be trained and evaluated on
         """
+
         self.config = config
         self.dataset = dataset
         self.model = self.load_model()
 
 
-    def evaluate_model(self):
-        pass
+    def evaluate_model(self, **kwargs):
+        """Generate predictions on the test set and quantify performance."""
+
+        breakpoint()
+        predictions = self.model.predict(X=self.dataset.test.features,
+                                         y=self.dataset.test.labels,
+                                         **kwargs)
+
+        probabilities = self.model.predict_proba(X=self.dataset.test.features,
+                                                 y=self.dataset.test.labels,
+                                                 **kwargs)
 
 
     def load_model(self):
@@ -69,6 +79,34 @@ class Experiment:
         return model(**self.config.model_kwargs)
 
 
+    def run(self): # main experiment logic here
+
+        if self.config.mode == 'train':
+            self.train_model()
+
+        elif self.config.mode == 'evaluate':  # TODO
+            err = '"Evaluation" mode is not yet implemented.'
+            raise NotImplementedError(err)
+
+            # remember that i want to be able to bypass the preprocesing and/or extraction stems
+            # if paths to already-existing files are provided via the config; implement that here
+            raw_data = Dataset.load_raw_data(self.config)
+            preprocessed_text = Dataset.preprocess_text(self.config, raw_data)
+            features = Dataset.extract_features(self.config, preprocessed_text)
+
+        self.evaluate_model()
+        self.write_report()
+        self.save_outputs()
+
+
+    def train_model(self, **kwargs):
+        """Fit model to a `Dataset`."""
+
+        self.model.fit(X=self.dataset.train.features,
+                       y=self.dataset.train.labels
+                       **kwargs)
+
+
     def try_pytorch(self):
         """Load Pytorch model."""
         # figure out pytorch models are loaded; currently i have zero clue
@@ -77,17 +115,7 @@ class Experiment:
         raise NotImplementedError(err)
 
 
-    def run(self): # main experiment logic here
-        self.train_model()
-        self.evaluate_model()
-        self.write_report()
-
-
-    def train_model(self):
-        pass
-
-
-    def generate_outputs(self) -> None:
+    def save_outputs(self) -> None:
         """
         Write all output files.
 

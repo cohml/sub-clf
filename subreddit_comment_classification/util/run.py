@@ -5,8 +5,10 @@ Logic for running a machine learning experiment end to end.
 
 import argparse
 import dask.dataframe as dd
+import sys
 
 from pathlib import Path
+from typing import Optional
 
 from ..experiment.config import Config
 from ..experiment.dataset import Dataset
@@ -27,10 +29,13 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def run(config_filepath: Path) -> None:
-    args = parse_args()
+def run(args: Optional[argparse.Namespace] = None) -> None:
+    if args:
+        config_filepath = args.config_filepath
+    else:
+        config_filepath = Path(sys.argv[1])
 
-    config = Config(args.config_filepath)
+    config = Config(config_filepath)
     dataset = Dataset(config)
     experiment = Experiment(config, dataset)
 
@@ -38,4 +43,5 @@ def run(config_filepath: Path) -> None:
 
 
 if __name__ == '__main__':
-    run()
+    args = parse_args()
+    run(args)
