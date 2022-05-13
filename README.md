@@ -16,8 +16,7 @@ prefixed environment `./env` into the repository root.
 # Data collection
 
 To scrape new data, first ensure that a file enumerating your Reddit OAuth credentials
-exists at `./subreddit_comment_classification/meta/credentials.json`. The file should
-define the following fields:
+exists at `./sub_clf/meta/credentials.json`. The file must define the following fields:
 
 ```json
 {
@@ -46,9 +45,3 @@ This is because new "top" and "hot" posts are always being added, while the numb
 can scrape from each category is capped at 1000. Regardless, the characteristics of all
 newly scraped comments should approximate the original data set, given the sheer volume
 of comments `scrape` will retrieve.
-
-After scraping, some rows may contain data that is corrupt or otherwise invalid. To
-identify and drop all rows thus affected:
-
-    $ conda activate ./env
-    $ clean
