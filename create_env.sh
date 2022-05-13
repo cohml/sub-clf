@@ -8,4 +8,4 @@ PROJECT_ROOT_DIR=$(dirname "$0")
 conda env create --file "${PROJECT_ROOT_DIR}"/env.yaml --prefix "${PROJECT_ROOT_DIR}"/env
 
 # install package into conda environment
-"${PROJECT_ROOT_DIR}"/env/bin/pip install -e "${PROJECT_ROOT_DIR}"
+"${PROJECT_ROOT_DIR}"/env/bin/pip install -e "${PROJECT_ROOT_DIR}" --no-deps
