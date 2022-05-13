@@ -18,9 +18,9 @@ from prawcore.exceptions import Forbidden
 from time import sleep
 from typing import Iterable, List, Optional
 
-from ..util.defaults import DEFAULTS
-from ..util.login import Reddit
-from ..util.misc import full_path
+from sub_clf.util.defaults import DEFAULTS
+from sub_clf.util.login import Reddit
+from sub_clf.util.misc import full_path
 
 
 # set up logging

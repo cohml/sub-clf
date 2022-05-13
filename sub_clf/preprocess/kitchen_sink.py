@@ -6,8 +6,8 @@ currently defined in `preprocessers.py`.
 
 from overrides import overrides
 
-from preprocess.base import MultiplePreprocessorPipeline
-from preprocess.preprocessors import *
+from sub_clf.preprocess.base import MultiplePreprocessorPipeline
+from sub_clf.preprocess.preprocessors import *
 
 
 class KitchenSinkPreprocessor(MultiplePreprocessorPipeline):

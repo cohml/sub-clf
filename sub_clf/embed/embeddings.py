@@ -12,7 +12,7 @@ import en_core_web_trf
 
 from overrides import overrides
 
-from embed.base import EmbeddingsVectorizer
+from sub_clf.embed.base import EmbeddingsVectorizer
 
 
 class LgEmbeddingsVectorizer(EmbeddingsVectorizer):

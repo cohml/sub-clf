@@ -9,11 +9,14 @@ from sklearn.feature_extraction.text import (
     TfidfTransformer,
     TfidfVectorizer
 )
-from embed.embeddings import LgEmbeddingsVectorizer, TrfEmbeddingsVectorizer
+from sub_clf.embed.embeddings import (
+    LgEmbeddingsVectorizer,
+    TrfEmbeddingsVectorizer
+)
 
 ## ---- preprocessors
-from preprocess.kitchen_sink import KitchenSinkPreprocessor
-from preprocess.preprocessors import (
+from sub_clf.preprocess.kitchen_sink import KitchenSinkPreprocessor
+from sub_clf.preprocess.preprocessors import (
     AccentRemover,
     ApostropheNormalizer,
     CaseNormalizer,

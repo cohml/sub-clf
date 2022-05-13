@@ -6,7 +6,7 @@ Object for navigating Reddit's back end API.
 import json
 import praw
 
-from ..util.defaults import DEFAULTS
+from sub_clf.util.defaults import DEFAULTS
 
 
 CREDENTIALS_FILEPATH = DEFAULTS['PATHS']['FILES']['REDDIT_OAUTH_CREDENTIALS']

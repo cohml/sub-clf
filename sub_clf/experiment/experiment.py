@@ -20,12 +20,13 @@ import yaml
 from pathlib import Path
 from typing import Any, Dict, List
 
-from .available import AVAILABLE
-from .config import Config
-from .dataset import Dataset
-from util.defaults import DEFAULTS
-from util.io import FEATURE_SAVERS
-from util.misc import pretty_dumps
+from sub_clf.experiment.available import AVAILABLE
+from sub_clf.experiment.config import Config
+from sub_clf.experiment.dataset import Dataset
+
+from sub_clf.util.defaults import DEFAULTS
+from sub_clf.util.io import FEATURE_SAVERS
+from sub_clf.util.misc import pretty_dumps
 
 
 class Experiment:

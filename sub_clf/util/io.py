@@ -12,7 +12,7 @@ from pathlib import Path
 from scipy.sparse import load_npz, save_npz
 from typing import List, Union
 
-from util.defaults import DEFAULTS
+from sub_clf.util.defaults import DEFAULTS
 
 
 def load_raw_data(parent_directory: Union[List[Path], Path],
