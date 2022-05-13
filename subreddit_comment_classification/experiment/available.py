@@ -93,6 +93,7 @@ AVAILABLE = {
         }
     },
     'MODELS' : {
+        'PYTORCH' : None,
         'SKLEARN' : {
             'AdaBoostClassifier': AdaBoostClassifier,
             'AdaBoostRegressor': AdaBoostRegressor,
