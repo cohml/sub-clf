@@ -4,12 +4,12 @@ from setuptools import find_packages, setup
 PROJECT_ROOT = Path(__file__).resolve().parent
 
 setup(
-    name='subreddit_comment_classification',
-    version='0.0.1',
+    name='sub-clf',
+    version='1.0.0',
     description='Resources for building Reddit comment classification models',
     long_description=(PROJECT_ROOT / 'README.md').read_text(),
     long_description_content_type='text/markdown',
-    url='https://github.com/cohml/subreddit_comment_classification',
+    url='https://github.com/cohml/sub-clf',
     packages=find_packages(exclude=['tests']),
     include_package_data=True,
     install_requires=['dask>=2022.4.1',
@@ -39,8 +39,8 @@ setup(
     entry_points={
         'console_scripts':
             [
-                'run = subreddit_comment_classification.util.run:run',
-                'scrape = subreddit_comment_classification.collect.scrape:main'
+                'run = sub_clf.util.run:run',
+                'scrape = sub_clf.collect.scrape:main'
             ]
         },
 )
