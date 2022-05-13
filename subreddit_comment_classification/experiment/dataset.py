@@ -34,18 +34,17 @@ class Dataset:
             an object enumerating all parameters for your experiment
         """
 
-        self.load_raw_data(config)
-        self.preprocess(config)
-
+        self.raw_data = self.load_raw_data(config)
+        self.preprocessed_text = self.preprocess(config, self.raw_data)
         self.labels = LabelBinarizer().fit_transform(self.raw_data.subreddit)
         self.categorical_labels = self.raw_data.subreddit
         self.ids = self.raw_data.index
         self.size = len(self)
 
         if config.features_file is not None:
-            self.load_features(config)
+            self.features = self.load_features(config)
         else:
-            self.extract_features(config)
+            self.features = self.extract_features(config)
 
         self.describe()
         self.partition(config)
@@ -72,7 +71,10 @@ class Dataset:
         pass
 
 
-    def extract_features(self, config: Config) -> None:
+    @classmethod
+    def extract_features(cls,
+                         config: Config,
+                         preprocessed_text) -> None:
         """Extract features as specified in the config."""
 
         extractors = AVAILABLE['FEATURE_EXTRACTORS']
@@ -84,7 +86,7 @@ class Dataset:
             raise KeyError(err)
 
         extractor = extractor(**config.extractor_kwargs)
-        self.features = extractor.fit_transform(self.preprocessed_text)
+        return extractor.fit_transform(preprocessed_text)
 
 
     def load_features(self, config: Config) -> None:
@@ -96,14 +98,14 @@ class Dataset:
         err = 'Loading features from a file is not yet implemented.'
         raise NotImplementedError(err)
 
-        self.features = None
+        return None
 
 
-    def load_raw_data(self, config: Config) -> None:
+    @classmethod
+    def load_raw_data(cls, config: Config) -> None:
         """Read and merge all raw data in the specified directory/files."""
 
-        raw_data_source = config.raw_data_directory or config.raw_data_filepaths
-        self.raw_data = load_raw_data(raw_data_source)
+        return load_raw_data(config.raw_data_directory or config.raw_data_filepaths)
 
 
     def partition(self, config: Config) -> None:
@@ -128,7 +130,8 @@ class Dataset:
                               ids=test_ids)
 
 
-    def preprocess(self, config: Config) -> None:
+    @classmethod
+    def preprocess(cls, config: Config, raw_data: dd.DataFrame) -> None:
         """Apply preprocessing steps as specified in the config."""
 
         if 'preprocessing_pipeline' in config:
@@ -163,7 +166,7 @@ class Dataset:
 
             pipeline = MultiplePreprocessorPipeline(*initialized_preprocessors)
 
-        self.preprocessed_text = pipeline.preprocess(self.raw_data.text)
+        return pipeline.preprocess(raw_data.text)
 
 
 class Partition(Dataset):
