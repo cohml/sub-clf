@@ -20,7 +20,7 @@ from typing import Iterable, List, Optional
 
 from sub_clf.util.defaults import DEFAULTS
 from sub_clf.util.login import Reddit
-from sub_clf.util.misc import full_path
+from sub_clf.util.utils import full_path
 
 
 # set up logging

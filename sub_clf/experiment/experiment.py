@@ -26,7 +26,7 @@ from sub_clf.experiment.dataset import Dataset
 
 from sub_clf.util.defaults import DEFAULTS
 from sub_clf.util.io import FEATURE_SAVERS
-from sub_clf.util.misc import pretty_dumps
+from sub_clf.util.utils import pretty_dumps
 
 
 class Experiment:

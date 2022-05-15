@@ -18,7 +18,7 @@ from sub_clf.experiment.config import Config
 from sub_clf.preprocess.base import MultiplePreprocessorPipeline
 from sub_clf.util.defaults import DEFAULTS
 from sub_clf.util.io import FEATURE_LOADERS, load_raw_data
-from sub_clf.util.misc import pretty_dumps
+from sub_clf.util.utils import pretty_dumps
 
 
 class Dataset:

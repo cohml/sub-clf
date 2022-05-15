@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from sub_clf.util.defaults import DEFAULTS
-from sub_clf.util.misc import full_path
+from sub_clf.util.utils import full_path
 
 
 class Config:

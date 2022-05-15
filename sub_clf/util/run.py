@@ -13,7 +13,7 @@ from typing import Optional
 from sub_clf.experiment.config import Config
 from sub_clf.experiment.dataset import Dataset
 from sub_clf.experiment.experiment import Experiment
-from sub_clf.util.misc import full_path
+from sub_clf.util.utils import full_path
 
 
 def parse_args() -> argparse.Namespace:
