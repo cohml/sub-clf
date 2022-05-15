@@ -6,10 +6,13 @@ Collection of text preprocessers and a base class for assembling them into pipel
 import dask.dataframe as dd
 import re
 
+from functools import partial
+from nltk import stem
 from string import punctuation, whitespace
 from sklearn.feature_extraction.text import strip_accents_ascii, strip_accents_unicode
 
 from sub_clf.preprocess.base import SinglePreprocessor
+from sub_clf.util.utils import pretty_dumps
 
 
 class AccentRemover(SinglePreprocessor):
@@ -223,11 +226,42 @@ class QuoteRemover(SinglePreprocessor):
 
 
 class Stemmer(SinglePreprocessor):
-    """Stem comments."""
+    """
+    Stem comments.
+
+    The following NLTK stemers are currently supported:
+    - LancasterStemmer ('lancaster')
+        - https://www.nltk.org/api/nltk.stem.lancaster.html
+    - PorterStemmer ('power')
+        - https://www.nltk.org/api/nltk.stem.porter.html
+    - RegexpStemmer ('regexp')
+        - https://www.nltk.org/api/nltk.stem.regexp.html
+    - SnowballStemmer ('snowball')
+        - https://www.nltk.org/api/nltk.stem.snowball.html
+    """
+
+    types = {'lancaster' : stem.lancaster.LancasterStemmer,
+             'porter' : stem.porter.PorterStemmer,
+             'regexp' : stem.regexp.RegexpStemmer,
+             'snowball' : stem.snowball.SnowballStemmer}
+
+
+    def __init__(self, type_='porter', **stem_method_kwargs):
+        stemmer = self.types.get(type_)
+        if stemmer is None:
+            raise TypeError(f'"{type_}" is not a recognized stemmer. Please select '
+                            'one of the following: {pretty_dumps(self.types)}')
+        else:
+            self._stem = partial(stemmer().stem, **stem_method_kwargs)
+
+
+    def stem(self, comment: str):
+        return ' '.join(map(self._stem, comment.split()))
+
 
     def transform(self, text: dd.Series) -> dd.Series:
         """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
-        return text
+        return text.map(self.stem, meta=('text', 'object'))
 
 
 class WhitespaceNormalizer(SinglePreprocessor):
