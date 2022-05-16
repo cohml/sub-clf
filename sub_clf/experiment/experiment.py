@@ -14,11 +14,14 @@ https://towardsdatascience.com/pretrained-word-embeddings-using-spacy-and-keras-
 
 import dask.dataframe as dd
 import json
+import numpy as np
 import torch
 import yaml
 
 from pathlib import Path
 from typing import Any, Dict, List
+
+from sklearn.metrics import classification_report
 
 from sub_clf.experiment.available import AVAILABLE
 from sub_clf.experiment.config import Config
@@ -57,19 +60,13 @@ class Experiment:
         predictions = self.model.predict(self.dataset.test.features)
         probabilities = self.model.predict_proba(self.dataset.test.features)
 
+        self.results = Results(self, predictions)
 
-
-
-
-
-        breakpoint()
-        predictions = self.model.predict(X=self.dataset.test.features,
-                                         y=self.dataset.test.labels,
-                                         **kwargs)
-
-        probabilities = self.model.predict_proba(X=self.dataset.test.features,
-                                                 y=self.dataset.test.labels,
-                                                 **kwargs)
+        for metric_name, suffix, metric_kwargs in self.config.performance_metrics:
+            metric = AVAILABLE['METRICS'][metric_name]
+            setattr(self.results,
+                    metric_name + (f'_{suffix}' if suffix else ''),
+                    metric(self.dataset.test.labels, predictions, **metric_kwargs))
 
 
     def load_model(self):
@@ -304,3 +301,16 @@ class Experiment:
         """Write all results and analyses to .ipynb and an equivalent HTML file."""
 
         self.report.save(output_directory)
+
+
+class Results:
+
+    def __init__(self, experiment: Experiment, predictions: np.ndarray) -> None:
+        self.classification_report = classification_report(
+            y_true=experiment.dataset.test.labels,
+            y_pred=predictions,
+            target_names=experiment.dataset.classes
+        )
+
+    def __repr__(self):
+        return self.classification_report

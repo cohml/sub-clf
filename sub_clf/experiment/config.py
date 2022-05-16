@@ -47,6 +47,7 @@ class Config:
             'model_kwargs' : dict,
             'output_directory' : str,
             'overwrite_existing' : bool,
+            'performance_metrics' : list,
             'preprocessors' : list,
             'preprocessing_pipeline' : dict,
             'raw_data_directory' : str,
@@ -74,11 +75,33 @@ class Config:
         if err is not None:
             raise TypeError(err)
 
-        for field_name in ['preprocessors', 'preprocessing_pipeline']:
+        for field_name in ['performance_metrics', 'preprocessors',
+                           'preprocessing_pipeline']:
             field = self.dict.get(field_name)
 
             if field is None:
                 continue
+
+            elif field_name == 'performance_metrics':
+                exception = TypeError
+                performance_metrics_err = ('Your config\'s "performance_metrics" field '
+                                           'must be a list of lists, where each inner '
+                                           'list has three items: a metric name, a '
+                                           'disambiguating suffix (e.g., "macro" vs. '
+                                           '"micro", useful if the same metric is '
+                                           'listed multiple times with different '
+                                           'kwargs; set to `null` if no suffix), and '
+                                           'a dict of kwargs (may be empty).')
+                if not isinstance(self.dict[field_name], list):
+                    err = performance_metrics_err
+                    break
+                for field in self.dict[field_name]:
+                    if not len(field) == 3 or \
+                       not isinstance(field[0], str) or \
+                       not isinstance(field[1], (str, type(None))) or \
+                       not isinstance(field[2], dict):
+                        err = performance_metrics_err
+                        break
 
             elif field_name == 'preprocessors':
                 exception = TypeError
@@ -134,7 +157,13 @@ class Config:
             err = conflicting_err.format('preprocessors', 'preprocessing_pipeline')
 
         else:
-            required_fields = ['extractor', 'output_directory', 'mode', 'model']
+            required_fields = [
+                'extractor',
+                'performance_metrics',
+                'output_directory',
+                'mode',
+                'model'
+            ]
             for required_field in required_fields:
                 if required_field not in self.dict:
                     err = missing_err.format(required_field)

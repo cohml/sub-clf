@@ -14,6 +14,16 @@ from sub_clf.embed.embeddings import (
     TrfEmbeddingsVectorizer
 )
 
+## ----- metrics
+from sklearn.metrics import (
+    accuracy_score,
+    confusion_matrix,
+    f1_score,
+    log_loss,
+    precision_score,
+    recall_score
+)
+
 ## ---- preprocessors
 from sub_clf.preprocess.kitchen_sink import KitchenSinkPreprocessor
 from sub_clf.preprocess.preprocessors import (
@@ -94,6 +104,14 @@ AVAILABLE = {
         'PIPELINES' : {
             'KitchenSinkPreprocessor' : KitchenSinkPreprocessor
         }
+    },
+    'METRICS' : {
+        'accuracy_score' : accuracy_score,
+        'confusion_matrix' : confusion_matrix,
+        'f1_score' : f1_score,
+        'log_loss' : log_loss,
+        'precision_score' : precision_score,
+        'recall_score' : recall_score
     },
     'MODELS' : {
         'PYTORCH' : None,
