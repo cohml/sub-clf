@@ -23,6 +23,7 @@ from typing import Any, Dict, List
 from sub_clf.experiment.available import AVAILABLE
 from sub_clf.experiment.config import Config
 from sub_clf.experiment.dataset import Dataset
+#from sub_clf.experiment.report import Report
 
 from sub_clf.util.defaults import DEFAULTS
 from sub_clf.util.io import FEATURE_SAVERS
@@ -181,6 +182,13 @@ class Experiment:
             self._save_metadata(data_directory, partitions)
 
 
+    def write_report(self):
+        """Create `Report` object based on experimental results."""
+
+        self.report = Report(self)
+        pass
+
+
     def _save_config(self, output_directory: Path) -> None:
         """Save config parameters in .json and .yaml formats."""
 
@@ -285,4 +293,6 @@ class Experiment:
 
 
     def _save_report(self, output_directory: Path) -> None:
-        pass
+        """Write all results and analyses to .ipynb and an equivalent HTML file."""
+
+        self.report.save(output_directory)
