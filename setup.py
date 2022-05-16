@@ -42,6 +42,7 @@ setup(
             [
                 'run = sub_clf.util.run:run',
                 'scrape = sub_clf.collect.scrape:main'
+                'tally = sub_clf.collect.tally:main'
             ]
         },
 )
