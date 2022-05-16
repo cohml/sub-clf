@@ -34,14 +34,21 @@ class Dataset:
             an object enumerating all parameters for your experiment
         """
 
+        # load and preprocess comments
         self.raw_data = self.load_raw_data(config)
         self.preprocessed_text = self.preprocess(config, self.raw_data)
+
+        # integer-encode labels and get class names
         self.label_encoder = LabelEncoder()
         self.labels = self.label_encoder.fit_transform(self.raw_data.subreddit)
         self.categorical_labels = self.raw_data.subreddit
+        self.classes = self.label_encoder.classes_
+
+        # set other misc attributes
         self.ids = self.raw_data.index
         self.size = len(self)
 
+        # extract features
         if config.features_file is None:
             self.features = self.extract_features(config, self.preprocessed_text)
         else:
