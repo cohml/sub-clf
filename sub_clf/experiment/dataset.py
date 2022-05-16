@@ -42,10 +42,10 @@ class Dataset:
         self.ids = self.raw_data.index
         self.size = len(self)
 
-        if config.features_file is not None:
-            self.features = self.load_features(config)
+        if config.features_file is None:
+            self.features = self.extract_features(config, self.preprocessed_text)
         else:
-            self.features = self.extract_features(config)
+            self.features = self.load_features(config)
 
         self.describe()
         self.partition(config)
@@ -86,8 +86,8 @@ class Dataset:
                    f'Please select one from the following: {pretty_dumps(extractors)}')
             raise KeyError(err)
 
-        extractor = extractor(**config.extractor_kwargs)
-        return extractor.fit_transform(preprocessed_text)
+        cls.extractor = extractor(**config.extractor_kwargs)
+        return cls.extractor.fit_transform(preprocessed_text)
 
 
     def load_features(self, config: Config) -> None:
