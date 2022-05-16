@@ -17,7 +17,7 @@ setup(
                       'ipython>=8.2.0',
                       'jupyter>=1.0.0',
                       'matplotlib>=3.5.1',
-                      'nltk>=3.6.7,'
+                      'nltk>=3.6.7',
                       'numpy>=1.22.3',
                       'overrides>=6.1.0',
                       'pandas>=1.4.2',
@@ -41,7 +41,7 @@ setup(
         'console_scripts':
             [
                 'run = sub_clf.util.run:run',
-                'scrape = sub_clf.collect.scrape:main'
+                'scrape = sub_clf.collect.scrape:main',
                 'tally = sub_clf.collect.tally:main'
             ]
         },
