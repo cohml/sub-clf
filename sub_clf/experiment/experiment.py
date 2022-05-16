@@ -54,6 +54,14 @@ class Experiment:
     def evaluate_model(self, **kwargs):
         """Generate predictions on the test set and quantify performance."""
 
+        predictions = self.model.predict(self.dataset.test.features)
+        probabilities = self.model.predict_proba(self.dataset.test.features)
+
+
+
+
+
+
         breakpoint()
         predictions = self.model.predict(X=self.dataset.test.features,
                                          y=self.dataset.test.labels,
@@ -105,7 +113,7 @@ class Experiment:
         """Fit model to a `Dataset`."""
 
         self.model.fit(X=self.dataset.train.features,
-                       y=self.dataset.train.labels
+                       y=self.dataset.train.labels,
                        **kwargs)
 
 
