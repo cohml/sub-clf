@@ -11,7 +11,7 @@ from typing import List, Optional, Union
 
 from scipy.sparse.base import spmatrix
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelBinarizer
+from sklearn.preprocessing import LabelEncoder
 
 from sub_clf.experiment.available import AVAILABLE
 from sub_clf.experiment.config import Config
@@ -36,7 +36,8 @@ class Dataset:
 
         self.raw_data = self.load_raw_data(config)
         self.preprocessed_text = self.preprocess(config, self.raw_data)
-        self.labels = LabelBinarizer().fit_transform(self.raw_data.subreddit)
+        self.label_encoder = LabelEncoder()
+        self.labels = self.label_encoder.fit_transform(self.raw_data.subreddit)
         self.categorical_labels = self.raw_data.subreddit
         self.ids = self.raw_data.index
         self.size = len(self)
