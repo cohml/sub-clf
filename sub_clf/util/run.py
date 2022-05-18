@@ -30,7 +30,7 @@ def parse_args() -> argparse.Namespace:
 def run() -> None:
     args = parse_args()
 
-    config = Config(config_filepath)
+    config = Config(args.config_filepath)
     dataset = Dataset(config)
     experiment = Experiment(config, dataset)
 
