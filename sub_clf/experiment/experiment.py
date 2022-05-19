@@ -15,13 +15,15 @@ https://towardsdatascience.com/pretrained-word-embeddings-using-spacy-and-keras-
 import dask.dataframe as dd
 import json
 import numpy as np
+import pandas as pd
 import torch
 import yaml
 
 from pathlib import Path
 from typing import Any, Dict, List
 
-from sklearn.metrics import classification_report
+from sklearn.metrics import (classification_report,
+                             precision_recall_fscore_support)
 
 from sub_clf.experiment.available import AVAILABLE
 from sub_clf.experiment.config import Config
@@ -306,11 +308,18 @@ class Experiment:
 class Results:
 
     def __init__(self, experiment: Experiment, predictions: np.ndarray) -> None:
-        self.classification_report = classification_report(
-            y_true=experiment.dataset.test.labels,
-            y_pred=predictions,
-            target_names=experiment.dataset.classes
-        )
+        classes = experiment.dataset.classes    # might it ever be that all/train/test have different classes? i sure hope not!!
+        labels = experiment.dataset.test.labels
+
+        prfs = precision_recall_fscore_support(y_true=labels, y_pred=predictions)
+        prfs = dict(zip(classes, zip(*prfs)))
+        columns = ['precision', 'recall', 'f1-score', 'support']
+        self.classification_report_df = pd.DataFrame(prfs, index=columns).T
+
+        self.classification_report = classification_report(y_true=labels,
+                                                           y_pred=predictions,
+                                                           target_names=classes)
+
 
     def __repr__(self):
         return self.classification_report
