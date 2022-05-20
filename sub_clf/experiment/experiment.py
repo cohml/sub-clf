@@ -14,7 +14,6 @@ https://towardsdatascience.com/pretrained-word-embeddings-using-spacy-and-keras-
 
 import dask.dataframe as dd
 import json
-import numpy as np
 import pandas as pd
 import torch
 import yaml
@@ -59,16 +58,18 @@ class Experiment:
     def evaluate_model(self, **kwargs):
         """Generate predictions on the test set and quantify performance."""
 
-        predictions = self.model.predict(self.dataset.test.features)
-        probabilities = self.model.predict_proba(self.dataset.test.features)
+        self.dataset.test.predictions = self.model.predict(self.dataset.test.features)
+        self.dataset.test.probabilities = self.model.predict_proba(self.dataset.test.features)
 
-        self.results = Results(self, predictions)
+        self.results = Results(self)
 
         for metric_name, suffix, metric_kwargs in self.config.performance_metrics:
             metric = AVAILABLE['METRICS'][metric_name]
-            setattr(self.results,
-                    metric_name + (f'_{suffix}' if suffix else ''),
-                    metric(self.dataset.test.labels, predictions, **metric_kwargs))
+            metric_name += f'_{suffix}' if suffix else ''
+            metric_value = metric(y_true=self.dataset.test.labels,
+                                  y_pred=self.dataset.test.predictions,
+                                  **metric_kwargs)
+            setattr(self.results, metric_name, metric_value)
 
 
     def load_model(self):
@@ -136,6 +137,7 @@ class Experiment:
             - model (binary)
             - train/test set comment IDs (.parquet.gz)
             - preprocessed comments texts (.parquet.gz)
+            - test set predictions (.parquet.gz)
             - feature values (.npz)
             - metadata (.csv)
 
@@ -162,6 +164,7 @@ class Experiment:
         # initialize directory for all data-oriented outputs, if needed
         if any([self.config.save_train_test_ids,
                 self.config.save_preprocessed_texts,
+                self.config.save_test_predictions,
                 self.config.save_features,
                 self.config.save_metadata]):
             data_directory = output_directory / 'data'
@@ -182,6 +185,9 @@ class Experiment:
         if self.config.save_preprocessed_texts:
             self._save_preprocessed_data(data_directory, partitions, to_parquet_kwargs)
 
+        if self.config.save_test_predictions:
+            self._save_test_set_predictions(data_directory, to_parquet_kwargs)
+
         if self.config.save_features:
             self._save_features(data_directory, partitions)
 
@@ -193,7 +199,6 @@ class Experiment:
         """Create `Report` object based on experimental results."""
 
         self.report = Report(self)
-        pass
 
 
     def _save_config(self, output_directory: Path) -> None:
@@ -305,11 +310,41 @@ class Experiment:
         self.report.save(output_directory)
 
 
+    def _save_test_set_predictions(self,
+                                   data_directory: Path,
+                                   to_parquet_kwargs: Dict[str, Any]
+                                   ) -> None:
+        """Write all test set predictions to .parquet.gz partitions."""
+
+        test_predictions_directory = data_directory / 'test' / 'predictions'
+        test_predictions_directory.mkdir(**self.force)
+
+        classes = dict(enumerate(self.dataset.classes))
+
+        y_true_categorical = pd.Series(self.dataset.test.labels)
+        y_true_categorical = y_true_categorical.map(classes)
+        y_true_categorical.index = self.dataset.test.ids
+        y_true_categorical.name = 'true'
+
+        y_pred_categorical = pd.Series(self.dataset.test.predictions)
+        y_pred_categorical = y_pred_categorical.map(classes)
+        y_pred_categorical.index = self.dataset.test.ids
+        y_pred_categorical.name = 'pred'
+
+        is_correct = pd.Series(y_true_categorical == y_pred_categorical)
+        is_correct = is_correct.astype(int)
+        is_correct.name = 'is_correct'
+
+        (dd.concat([y_true_categorical, y_pred_categorical, is_correct], axis=1)
+           .to_parquet(test_predictions_directory, **to_parquet_kwargs))
+
+
 class Results:
 
-    def __init__(self, experiment: Experiment, predictions: np.ndarray) -> None:
+    def __init__(self, experiment: Experiment) -> None:
         classes = experiment.dataset.classes    # might it ever be that all/train/test have different classes? i sure hope not!!
         labels = experiment.dataset.test.labels
+        predictions = experiment.dataset.test.predictions
 
         prfs = precision_recall_fscore_support(y_true=labels, y_pred=predictions)
         prfs = dict(zip(classes, zip(*prfs)))

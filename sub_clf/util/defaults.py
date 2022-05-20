@@ -29,6 +29,7 @@ DEFAULTS = {
         'save_metadata': False,
         'save_model': False,
         'save_preprocessed_texts': False,
+        'save_test_predictions' : False,
         'save_train_test_ids': False,
         'train_test_split_kwargs': {}
     },
