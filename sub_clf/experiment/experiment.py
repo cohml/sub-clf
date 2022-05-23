@@ -27,7 +27,7 @@ from sklearn.metrics import (classification_report,
 from sub_clf.experiment.available import AVAILABLE
 from sub_clf.experiment.config import Config
 from sub_clf.experiment.dataset import Dataset
-#from sub_clf.experiment.report import Report
+from sub_clf.experiment.report import Report
 
 from sub_clf.util.defaults import DEFAULTS
 from sub_clf.util.io import FEATURE_SAVERS
@@ -98,7 +98,7 @@ class Experiment:
             err = '"Evaluation" mode is not yet implemented.'
             raise NotImplementedError(err)
 
-            # remember that i want to be able to bypass the preprocesing and/or extraction stems
+            # remember that i want to be able to bypass the preprocessing and/or extraction steps
             # if paths to already-existing files are provided via the config; implement that here
             raw_data = Dataset.load_raw_data(self.config)
             preprocessed_text = Dataset.preprocess_text(self.config, raw_data)
@@ -249,10 +249,11 @@ class Experiment:
             partition_ids_directory = data_directory / partition / 'ids'
             partition_ids_directory.mkdir(**self.force)
             partition_ids = getattr(self.dataset, partition).ids
-            (partition_ids.to_frame(name='comment_ids')
-                          .to_parquet(partition_ids_directory,
-                                      schema={'comment_id' : schema['comment_id']},
-                                      **to_parquet_kwargs))
+            (dd.from_array(partition_ids)
+               .to_frame(name='comment_id')
+               .to_parquet(partition_ids_directory,
+                           schema={'comment_id' : schema['comment_id']},
+                           **to_parquet_kwargs))
 
 
     def _save_metadata(self, data_directory: Path, partitions: List[str]) -> None:
@@ -286,6 +287,7 @@ class Experiment:
                                 to_parquet_kwargs: Dict[str, Any]
                                 ) -> None:
         """Save preprocessed comment texts to .parquet.gz partitions."""
+
         for partition in partitions:
             preprocessed_text_directory = data_directory / partition / 'preprocessed_text'
             preprocessed_text_directory.mkdir(**self.force)
@@ -319,41 +321,37 @@ class Experiment:
         test_predictions_directory = data_directory / 'test' / 'predictions'
         test_predictions_directory.mkdir(**self.force)
 
-        classes = dict(enumerate(self.dataset.classes))
+        y_true_categorical = dd.from_array(self.dataset.test.labels)
+        y_true_categorical = y_true_categorical.map(self.dataset.class_name_mappings)
 
-        y_true_categorical = pd.Series(self.dataset.test.labels)
-        y_true_categorical = y_true_categorical.map(classes)
-        y_true_categorical.index = self.dataset.test.ids
-        y_true_categorical.name = 'true'
+        y_pred_categorical = dd.from_array(self.dataset.test.predictions)
+        y_pred_categorical = y_pred_categorical.map(self.dataset.class_name_mappings)
 
-        y_pred_categorical = pd.Series(self.dataset.test.predictions)
-        y_pred_categorical = y_pred_categorical.map(classes)
-        y_pred_categorical.index = self.dataset.test.ids
-        y_pred_categorical.name = 'pred'
+        is_correct = self.dataset.test.labels == self.dataset.test.predictions
+        is_correct = dd.from_array(is_correct).astype(int)
 
-        is_correct = pd.Series(y_true_categorical == y_pred_categorical)
-        is_correct = is_correct.astype(int)
-        is_correct.name = 'is_correct'
+        ids = dd.from_array(self.dataset.test.ids)
 
         (dd.concat([y_true_categorical, y_pred_categorical, is_correct], axis=1)
+           .rename(columns={0 : 'y_true', 1 : 'y_pred', 2 : 'is_correct'})
+           .set_index(ids)
            .to_parquet(test_predictions_directory, **to_parquet_kwargs))
 
 
 class Results:
 
     def __init__(self, experiment: Experiment) -> None:
-        classes = experiment.dataset.classes    # might it ever be that all/train/test have different classes? i sure hope not!!
         labels = experiment.dataset.test.labels
         predictions = experiment.dataset.test.predictions
+        class_names = experiment.dataset.class_name_mappings.values()
 
-        prfs = precision_recall_fscore_support(y_true=labels, y_pred=predictions)
-        prfs = dict(zip(classes, zip(*prfs)))
+        prfs = precision_recall_fscore_support(labels, predictions)
+        prfs = dict(zip(class_names, zip(*prfs)))
         columns = ['precision', 'recall', 'f1-score', 'support']
         self.classification_report_df = pd.DataFrame(prfs, index=columns).T
 
-        self.classification_report = classification_report(y_true=labels,
-                                                           y_pred=predictions,
-                                                           target_names=classes)
+        self.classification_report = classification_report(labels, predictions,
+                                                           target_names=class_names)
 
 
     def __repr__(self):

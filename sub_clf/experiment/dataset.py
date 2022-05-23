@@ -2,16 +2,16 @@
 Object representing a dataset and all its partitions.
 """
 
+import dask
 import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from scipy.sparse.base import spmatrix
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
 
 from sub_clf.experiment.available import AVAILABLE
 from sub_clf.experiment.config import Config
@@ -34,19 +34,22 @@ class Dataset:
             an object enumerating all parameters for your experiment
         """
 
-        # load and preprocess comments
+        # load and preprocess comments (these attrs are dask.dataframes)
         self.raw_data = self.load_raw_data(config)
         self.preprocessed_text = self.preprocess(config, self.raw_data)
 
-        # integer-encode labels and get class names
-        self.label_encoder = LabelEncoder()
-        self.labels = self.label_encoder.fit_transform(self.raw_data.subreddit)
-        self.categorical_labels = self.raw_data.subreddit
-        self.classes = self.label_encoder.classes_
+        categorical_labels, ids = dask.compute(self.raw_data.subreddit.astype(object).values,
+                                               self.raw_data.index.values)
+
+        # integer-encode labels and get class names (these attrs are numpy.ndarrays)
+        self.categorical_labels = categorical_labels
+        self.labels, class_names = pd.factorize(self.categorical_labels)
+        self.class_name_mappings = dict(enumerate(class_names))
+        self.map_to_categorical = np.vectorize(self.class_name_mappings.get)
 
         # set other misc attributes
-        self.ids = self.raw_data.index
-        self.size = len(self)
+        self.ids: np.ndarray = ids
+        self.size: int = len(self)
 
         # extract features
         if config.features_file is None:
@@ -67,7 +70,7 @@ class Dataset:
         # `self.features`, `self.labels`, and `self.categorical_labels` will all be
         # defined before this is called
 
-        # `self.features` will be a `np.ndarray` or a scipy spare matrix, `self.labels`
+        # `self.features` will be a `np.ndarray` or a scipy sparse matrix, `self.labels`
         # will be a `np.ndarray`, and `self.categorical_labels` will be a `dask.Series`
 
         # in this method, just compute some summary statistics about distributions of
@@ -76,7 +79,15 @@ class Dataset:
 
         # these stats can be referenced when creating the `Report` object
 
-        pass
+
+        self.metadata = Metadata(self)
+
+        # compute differences between train and test metadata to evaluate how similarly
+        # distributed the train and test sets are, both within and across subreddits
+#        self.metadata.diffs = ...
+        pass # TODO
+
+
 
 
     @classmethod
@@ -119,23 +130,20 @@ class Dataset:
     def partition(self, config: Config) -> None:
         """Split data into train and test sets."""
 
-        subs = self.raw_data.subreddit
-        ids = self.raw_data.index.compute()
         indices = np.arange(self.size)
+        train, test = train_test_split(indices, **config.train_test_split_kwargs)
 
-        (train_ids, test_ids,
-         train_idx, test_idx) = train_test_split(ids, indices,
-                                                 **config.train_test_split_kwargs)
+        self.train = Partition(features=self.features[train],
+                               labels=self.labels[train],
+                               categorical_labels=self.map_to_categorical(self.labels[train]),
+                               ids=self.ids[train],
+                               class_name_mappings=self.class_name_mappings)
 
-        self.train = Partition(features=self.features[train_idx],
-                               labels=self.labels[train_idx],
-                               categorical_labels=subs.loc[subs.index.isin(train_ids)],
-                               ids=train_ids)
-
-        self.test = Partition(features=self.features[test_idx],
-                              labels=self.labels[test_idx],
-                              categorical_labels=subs.loc[subs.index.isin(test_ids)],
-                              ids=test_ids)
+        self.test = Partition(features=self.features[test],
+                              labels=self.labels[test],
+                              categorical_labels=self.map_to_categorical(self.labels[test]),
+                              ids=self.ids[test],
+                              class_name_mappings=self.class_name_mappings)
 
 
     @classmethod
@@ -183,8 +191,9 @@ class Partition(Dataset):
     def __init__(self,
                  features: Union[np.ndarray, spmatrix],
                  labels: np.ndarray,
-                 categorical_labels: dd.Series,
-                 ids: pd.Series):
+                 categorical_labels: np.ndarray,
+                 ids: np.ndarray,
+                 class_name_mappings: Dict[int, str]):
         """
         Create specialized `Dataset` object for the train or test set partitions.
 
@@ -194,18 +203,58 @@ class Partition(Dataset):
             extracted features
         labels : np.ndarray
             binarized labels
-        categorical_labels : dd.Series
+        categorical_labels : np.ndarray
             subreddit names - useful for `describe`
-        ids : pd.Series
+        ids : np.ndarray
             comment IDs
+        class_name_mappings ; Dict[int, str]
+            mappings between integer labels and categorical labels
         """
-
-        ids = dd.from_pandas(ids.to_series(), npartitions=DEFAULTS['NCPU'])
 
         self.features = features
         self.labels = labels
         self.categorical_labels = categorical_labels
         self.ids = ids
         self.size = ids.size
+        self.class_name_mappings = class_name_mappings
 
         self.describe()
+
+
+class Metadata:
+    """A container for housing all interesting `Dataset` metadata as attributes."""
+
+    def __init__(self, dataset: Union[Dataset, Partition]) -> None:
+        class_names = dataset.class_name_mappings.values()
+        _, n_by_class = np.unique(dataset.labels, return_counts=True)
+        self.class_distributions_n = pd.Series(n_by_class, index=class_names)
+        self.class_distributions_pct = self.class_distributions_n / dataset.size
+
+        self.feature_matrix = self.compute_feature_metadata_matrix(dataset)
+
+
+    @staticmethod
+    def compute_feature_metadata_matrix(
+        dataset: Union[Dataset, Partition]
+    ) -> pd.DataFrame:
+
+        if isinstance(dataset.features, spmatrix):
+            token_to_index = {i : t for  t, i in dataset.extractor.vocabulary_.items()}
+            feature_matrix = pd.DataFrame.sparse.from_spmatrix(dataset.features,
+                                                               index=dataset.ids)
+            feature_matrix.columns = feature_matrix.columns.map(token_to_index)
+#            ... but what can i do with this? with CountVectorizer anyway, the dims are enormous...
+
+        elif isinstance(dataset.features, np.ndarray):
+            err = ('feature metadata matrix computation for np.ndarray feature sets '
+                   'not yet implemented')
+            raise NotImplementedError(err) # TODO
+
+        else:
+            err = ('Currently feature metadata matrices can only be computed for '
+                   f'features of type "{type(np.ndarray(0))}" or "{type(spmatrix)}", '
+                   f'but the "{type(dataset.extractor)}" feature extractor produces '
+                   f'type {type(dataset.features)}".')
+            raise NotImplementedError(err) # keep this one
+
+        return feature_matrix
