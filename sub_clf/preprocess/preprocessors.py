@@ -5,9 +5,11 @@ Collection of text preprocessers and a base class for assembling them into pipel
 
 import dask.dataframe as dd
 import re
+import spacy
 
 from functools import partial
 from nltk import stem
+from operator import attrgetter
 from string import punctuation, whitespace
 from sklearn.feature_extraction.text import strip_accents_ascii, strip_accents_unicode
 
@@ -225,7 +227,7 @@ class QuoteRemover(SinglePreprocessor):
         return text.str.replace(**quote)
 
 
-class Stemmer(SinglePreprocessor):
+class Stemmer(SinglePreprocessor):  # note: not used; tokens are lemmatized instead (by `StopwordRemover`)
     """
     Stem comments.
 
@@ -251,8 +253,7 @@ class Stemmer(SinglePreprocessor):
         if stemmer is None:
             raise TypeError(f'"{type_}" is not a recognized stemmer. Please select '
                             'one of the following: {pretty_dumps(self.types)}')
-        else:
-            self._stem = partial(stemmer().stem, **stem_method_kwargs)
+        self._stem = partial(stemmer().stem, **stem_method_kwargs)
 
 
     def stem(self, comment: str):
@@ -262,6 +263,49 @@ class Stemmer(SinglePreprocessor):
     def transform(self, text: dd.Series) -> dd.Series:
         """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
         return text.map(self.stem, meta=('text', 'object'))
+
+
+class StopwordRemover(SinglePreprocessor):
+    """
+    Remove stopwords from comments.
+
+    E.g.:
+
+    |This sentence contains two stop words.
+        -->
+    |sentence contains stop words .  # `lemmatize=False` (default)
+    |sentence contain stop word .    # `lemmatize=True`
+
+    The following spaCy language models are currently supported for stop word removal:
+    - en_core_web_lg ('lg')
+        - https://spacy.io/models/en#en_core_web_lg
+    - en_core_web_trf ('trf')
+        - https://spacy.io/models/en#en_core_web_trf
+    """
+
+    models = {'lg' : 'en_core_web_lg',
+              'trf' : 'en_core_web_trf'}
+
+
+    def __init__(self, model='lg', lemmatize=False):
+        model_ = self.models.get(model)
+        if model_ is None:
+            raise TypeError(f'"{model}" is not a recognized language model for '
+                            'stop word removal. Please select one of the following: '
+                            f'{pretty_dumps(self.models)}')
+        self.nlp = spacy.load(model_)
+        self.token = attrgetter('lemma_' if lemmatize else 'text')
+
+
+    def remove_stopwords(self, comment: str):
+        without_stopwords = (self.token(token) for token in self.nlp(comment)
+                                               if not token.is_stop)
+        return ' '.join(without_stopwords)
+
+
+    def transform(self, text: dd.Series) -> dd.Series:
+        """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
+        return text.map(self.remove_stopwords, meta=('text', 'object'))
 
 
 class WhitespaceNormalizer(SinglePreprocessor):

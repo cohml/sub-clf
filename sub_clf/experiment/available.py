@@ -38,6 +38,7 @@ from sub_clf.preprocess.preprocessors import (
     QuoteRemover,
     SinglePreprocessor,
     Stemmer,
+    StopwordRemover,
     WhitespaceNormalizer
 )
 
@@ -99,6 +100,7 @@ AVAILABLE = {
             'QuoteRemover': QuoteRemover,
             'SinglePreprocessor': SinglePreprocessor,
             'Stemmer': Stemmer,
+            'StopwordRemover' : StopwordRemover,
             'WhitespaceNormalizer': WhitespaceNormalizer
         },
         'PIPELINES' : {

@@ -23,7 +23,7 @@ class KitchenSinkPreprocessor(MultiplePreprocessorPipeline):
                      PunctuationRemover(),
                      WhitespaceNormalizer(),
                      NewlineCollapser(),
-                     Stemmer(to_lowercase=False)]
+                     StopwordRemover(lemmatize=True)]
 
 
     @overrides
