@@ -232,7 +232,7 @@ class Stemmer(SinglePreprocessor):
     The following NLTK stemers are currently supported:
     - LancasterStemmer ('lancaster')
         - https://www.nltk.org/api/nltk.stem.lancaster.html
-    - PorterStemmer ('power')
+    - PorterStemmer ('porter')
         - https://www.nltk.org/api/nltk.stem.porter.html
     - RegexpStemmer ('regexp')
         - https://www.nltk.org/api/nltk.stem.regexp.html
