@@ -11,8 +11,9 @@ import pandas as pd
 from collections import defaultdict
 from pathlib import Path
 from time import perf_counter
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
+from sub_clf.util.defaults import DEFAULTS
 from sub_clf.util.utils import full_path, measure_duration
 
 
@@ -27,7 +28,7 @@ def count(p: Path,
     status = f'{i:02} {subreddit} .{"."*(maxlen-len(subreddit))} '
     print(status, end='', flush=True)
 
-    df = dd.read_parquet(p).compute()
+    df = dd.read_parquet(p, **DEFAULTS['IO']['READ_PARQUET_KWARGS']).compute()
     counts[subreddit] += len(df)
     for col in nulls:
         nulls[col] += df[col].isna().sum()
@@ -35,12 +36,16 @@ def count(p: Path,
     return counts, nulls
 
 
-def display_counts(counts: Dict[str, int], nulls: Dict[str, int]) -> None:
+def display_counts(counts: Dict[str, int],
+                   nulls: Dict[str, int],
+                   log: Optional[Path]
+                   ) -> None:
+
     counts = pd.Series(counts)
     n = format(counts.sum(), ',')
     pcts = counts / counts.sum()
     total = (pd.DataFrame({'sub':['------------', 'total'],
-                           'n':['---------', n],
+                           'n':['----------', n],
                            '%':['-------', '100.00%']})
                .set_index('sub'))
     print('\ndistribution of samples by subreddit:',
@@ -48,10 +53,11 @@ def display_counts(counts: Dict[str, int], nulls: Dict[str, int]) -> None:
             .rename(columns=dict(enumerate(list('n%'))))
             .sort_values('%', ascending=False)
             .assign(**{'%' : lambda df: df['%'].apply('{:.2%}'.format)}), total]),
-          sep='\n')
+          sep='\n',
+          file=log)
 
     nulls = pd.Series(nulls)
-    print('\nno. nulls by col:', nulls, sep='\n')
+    print('\nno. nulls by col:', nulls, sep='\n', file=log)
 
 
 def get_subreddit_paths(top_level_parquets_dir: Path) -> Tuple[List[Path], int]:
@@ -71,13 +77,15 @@ def parse_args() -> argparse.ArgumentParser:
     parser.add_argument(
         '-o', '--output_filepath',
         type=full_path,
-        help='not yet implemented'
+        help='log tallies to file, else print to stdout'
     )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
+
+    log = open(args.output_filepath, 'w') if args.output_filepath else None
 
     counts = defaultdict(int)
     nulls = dict.fromkeys(['subreddit', 'post_id', 'upvotes', 'text'], 0)
@@ -91,11 +99,11 @@ def main() -> None:
 
         counts, nulls = count(p, i, maxlen, counts, nulls)
 
-    display_counts(counts, nulls)
+    display_counts(counts, nulls, log)
 
-    if args.output_filepath:
-        err = 'The ability to save to the tallies a file is not yet supported.'
-        raise NotImplementedError(err)
+    if log:
+        log.close()
+        print('\ntallies written to', args.output_filepath)
 
 
 if __name__ == '__main__':
