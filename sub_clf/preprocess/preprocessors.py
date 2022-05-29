@@ -168,6 +168,22 @@ class NewlineCollapser(SinglePreprocessor):
         return text.str.replace(**consecutive_newlines)
 
 
+class PassthroughPreprocessor(SinglePreprocessor):
+    """
+    Pass raw text through unchanged, i.e., apply no preprocessing.
+
+    E.g.:
+
+    |Lorem ipsum dolor sit amet.
+        -->
+    |Lorem ipsum dolor sit amet.
+    """
+
+    def transform(self, text: dd.Series) -> dd.Series:
+        """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
+        return text
+
+
 class PunctuationRemover(SinglePreprocessor):
     """
     Remove common punctuation from comments. Note that apostrophes, hyphens, and

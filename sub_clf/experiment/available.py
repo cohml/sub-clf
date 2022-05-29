@@ -34,6 +34,7 @@ from sub_clf.preprocess.preprocessors import (
     HyperlinkRemover,
     InlineCodeRemover,
     NewlineCollapser,
+    PassthroughPreprocessor,
     PunctuationRemover,
     QuoteRemover,
     SinglePreprocessor,
@@ -97,8 +98,8 @@ AVAILABLE = {
             'InlineCodeRemover': InlineCodeRemover,
             'NewlineCollapser': NewlineCollapser,
             'PunctuationRemover': PunctuationRemover,
+            'PassthroughPreprocessor': PassthroughPreprocessor,
             'QuoteRemover': QuoteRemover,
-            'SinglePreprocessor': SinglePreprocessor,
             'Stemmer': Stemmer,
             'StopwordRemover' : StopwordRemover,
             'WhitespaceNormalizer': WhitespaceNormalizer
