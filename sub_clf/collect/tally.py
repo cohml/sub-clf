@@ -48,6 +48,9 @@ def display_counts(counts: Dict[str, int],
                            'n':['----------', n],
                            '%':['-------', '100.00%']})
                .set_index('sub'))
+
+    pd.options.display.max_rows = None
+
     print('\ndistribution of samples by subreddit:',
           pd.concat([pd.concat([counts.apply('{:,}'.format), pcts], axis=1)
             .rename(columns=dict(enumerate(list('n%'))))
