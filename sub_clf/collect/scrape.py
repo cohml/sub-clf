@@ -103,7 +103,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '-o', '--output-directory',
         type=full_path,
-        default=DEFAULTS['PATHS']['DIRS']['ALL_FIELDS'],
+        default=DEFAULTS['PATHS']['DIRS']['RAW_DATA'],
         help='path to directory to write output files to (one per subreddit)'
              '(default: %(default)s)'
     )

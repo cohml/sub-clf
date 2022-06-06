@@ -64,7 +64,7 @@ DEFAULTS = {
             'REDDIT_OAUTH_CREDENTIALS' : _PROJECT_DIR / 'meta' / 'credentials.json'
         },
         'DIRS' : {
-            'ALL_FIELDS' : _PROJECT_DIR / 'data' / 'all_fields',
+            'RAW_DATA' : _PROJECT_DIR / 'data' / 'raw',
         }
     }
 }
