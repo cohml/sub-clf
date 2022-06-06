@@ -14,7 +14,7 @@ def full_path(relative_path: str) -> Path:
 def measure_duration(f: Callable) -> Callable:
     """
     Decorator to measure function execution time.
-    Intended for use with `collect/count_samples.py`
+    Intended for use with `collect/tally.py`
     """
 
     def measured_function(*args) -> None:
