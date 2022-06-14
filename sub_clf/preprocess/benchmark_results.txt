@@ -1,9 +1,0 @@
-Mean results over 100 iterations
-================================
-
-NlpPipe 
-	Mean wall time: 15.6291 seconds
-
-SklearnPipeline 
-	Mean wall time: 7.2563 seconds
-

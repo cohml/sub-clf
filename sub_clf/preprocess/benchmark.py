@@ -1,11 +1,12 @@
 """
 Benchmark the performance of two options for parallelized text preprocessing:
 
-    1. using `spacy`'s `nlp.pipe` with custom components
+    1. using `spacy`'s `nlp.pipe` with custom components and a `batch_size` of `NCPU`
     2. using `sklearn.Pipeline` with custom regex-based transformers
 
 For each option, execute `NITER` iterations, compute the mean processing time,
-and save the results to a "benchmark_results.txt" file alongside this script.
+saving (1) the aggregate results to a "benchmark_aggregates.txt" and (2) the raw
+results to a series of histograms in "benchmark_histograms.png".
 """
 
 
@@ -13,6 +14,8 @@ import warnings
 warnings.simplefilter("ignore", UserWarning)
 
 import dask.dataframe as dd
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import re
 
@@ -46,30 +49,51 @@ class PerformanceBenchmarker:
     def benchmark_performance(self, niter: int, *args, **kwargs):
         """Compute mean duration of data transformation over `niter` iterations."""
 
-        duration = 0
+        durations = []
         for _ in tqdm(range(niter), total=niter):
             start = perf_counter()
             self.preprocess(*args, **kwargs)
             end = perf_counter()
-            duration += end - start
-        return duration / niter
+            durations.append(end - start)
+        return pd.Series(durations).round(4)
 
     @staticmethod
-    def write_results_to_file(niter: int, durations: Dict[str, float]):
-        """Record benchmarking results in a .txt file alongside this script."""
+    def save_results(niter: int, ntext: int, durations: Dict[str, dd.Series]):
+        """Save benchmarking results to .txt and .png files alongside this script."""
 
-        results_file_path = Path(__file__).parent / 'benchmark_results.txt'
-        results_file = results_file_path.open('w')
+        results = pd.DataFrame(durations)
+        script_dir = Path(__file__).parent
 
-        print('Mean results over', niter, 'iterations', file=results_file)
-        print('================================\n', file=results_file)
+        # save aggregate results (i.e., means and standard deviations) to .txt file
+        aggregates_file_path = script_dir / 'benchmark_aggregates.txt'
+        aggregates_file = aggregates_file_path.open('w')
 
-        for method, duration in durations.items():
-            print(method, '\n\tMean wall time:', duration, 'seconds\n', file=results_file)
+        print(f'Aggregate results* ({niter} iterations, {ntext} texts)', file=aggregates_file)
+        print('===============================================\n', file=aggregates_file)
+        print(results.agg(['mean', 'std']).T.to_string(), file=aggregates_file)
+        print('\n* units are in seconds', file=aggregates_file)
 
-        results_file.close()
+        aggregates_file.close()
+        print('Results saved to', aggregates_file_path.resolve())
 
-        print('Results written to', results_file_path.resolve())
+        # save histograms of raw durations to .png file
+        min_, max_ = results.stack().agg(['min', 'max'])
+        min_, max_ = np.floor(min_), np.ceil(max_)
+        nbins = int((max_ - min_) * 4) + 1
+        bins = np.linspace(min_, max_, nbins)
+
+        axes = results.plot.hist(bins=bins, title=results.columns.tolist(),
+                                 figsize=(12, 8), color='silver',
+                                 subplots=True, legend=False)
+        axes[-1].set_xticks(bins)
+        axes[-1].set_xticklabels('' if i % 1 else int(i) for i in bins)
+        axes[-1].set_xlabel('Runtime (sec)')
+        plt.suptitle(f'Distribution of durations to preprocess {ntext} Reddit commments')
+
+        histogram_file_path = script_dir / 'benchmark_histograms.png'
+        plt.savefig(histogram_file_path, dpi=150)
+        print('Histograms saved to', histogram_file_path.resolve())
+
 
     def __str__(self):
         return self.__class__.__name__
@@ -124,7 +148,7 @@ class NlpPipe(PerformanceBenchmarker):
         return dd.from_pandas(pd.DataFrame(annotations), npartitions=DEFAULTS['NCPU'])
 
     def preprocess(self, text: dd.Series):
-        docs = self.nlp.pipe(text)
+        docs = self.nlp.pipe(text, batch_size=DEFAULTS['NCPU'])
         annotations_df = self.get_annotations_df(docs)
         is_punct_or_inline_code = ~(annotations_df.is_punct | annotations_df.is_inline_code)
         annotations_df = annotations_df[is_punct_or_inline_code]
@@ -181,14 +205,18 @@ class SklearnPipeline(PerformanceBenchmarker):
 
 if __name__ == '__main__':
 
+    # read in reddit comment data as dask.dataframe (raw text in "text" column)
     texts = dd.read_parquet(TEST_DATA_PATH, **DEFAULTS['IO']['READ_PARQUET_KWARGS'])
 
-    durations = {}
+    # initialize pipelines to benchmark and container for results
     parallelization_methods = [NlpPipe(), SklearnPipeline()]
+    durations = {}
 
+    # perform `NITER` iterations for each pipelne and capture results
     for method in parallelization_methods:
-        print(f'Measuring {method}...')
+        print(f'Benchmarking {method}...')
         duration = method.benchmark_performance(NITER, texts.text)
-        durations[str(method)] = round(duration, 4)
+        durations[str(method)] = duration
 
-    PerformanceBenchmarker.write_results_to_file(NITER, durations)
+    # write aggregate results to .txt file and plot histograms as .png
+    PerformanceBenchmarker.save_results(NITER, len(texts), durations)
