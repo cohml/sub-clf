@@ -4,7 +4,7 @@ Benchmark the performance of two options for parallelized text preprocessing:
     1. using `spacy`'s `nlp.pipe` with custom components and a `batch_size` of `NCPU`
     2. using `sklearn.Pipeline` with custom regex-based transformers
 
-For each option, execute `NITER` iterations, compute the mean processing time,
+For each option, execute `NITER` iterations and compute the mean processing time,
 saving (1) the aggregate results to a "benchmark_aggregates.txt" and (2) the raw
 results to a series of histograms in "benchmark_histograms.png".
 """
@@ -84,12 +84,13 @@ class PerformanceBenchmarker:
         bins = np.linspace(min_, max_, nbins)
 
         axes = results.plot.hist(bins=bins, title=results.columns.tolist(),
-                                 figsize=(12, 8), color='silver',
+                                 figsize=(10, 6), color='silver',
                                  subplots=True, legend=False)
         axes[-1].set_xticks(bins)
         axes[-1].set_xticklabels('' if i % 1 else int(i) for i in bins)
-        axes[-1].set_xlabel('Runtime (sec)')
-        plt.suptitle(f'Distribution of durations to preprocess {ntext} Reddit commments')
+        axes[-1].set_xlabel('Wall time (sec)')
+        plt.suptitle(f'Total duration to preprocess {ntext:,} Reddit commments using '
+                     'two different pipelines')
 
         histogram_file_path = output_dir / 'benchmark_histograms.png'
         plt.savefig(histogram_file_path, dpi=150)
