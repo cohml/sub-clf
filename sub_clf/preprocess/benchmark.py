@@ -59,13 +59,14 @@ class PerformanceBenchmarker:
 
     @staticmethod
     def save_results(niter: int, ntext: int, durations: Dict[str, dd.Series]):
-        """Save benchmarking results to .txt and .png files alongside this script."""
+        """Save benchmarking results to .txt and .png files."""
 
         results = pd.DataFrame(durations)
-        script_dir = Path(__file__).parent
+        output_dir = Path(__file__).parent / 'benchmark_results'
+        output_dir.mkdir(exist_ok=True, parents=True)
 
         # save aggregate results (i.e., means and standard deviations) to .txt file
-        aggregates_file_path = script_dir / 'benchmark_aggregates.txt'
+        aggregates_file_path = output_dir / 'benchmark_aggregates.txt'
         aggregates_file = aggregates_file_path.open('w')
 
         print(f'Aggregate results* ({niter} iterations, {ntext} texts)', file=aggregates_file)
@@ -90,7 +91,7 @@ class PerformanceBenchmarker:
         axes[-1].set_xlabel('Runtime (sec)')
         plt.suptitle(f'Distribution of durations to preprocess {ntext} Reddit commments')
 
-        histogram_file_path = script_dir / 'benchmark_histograms.png'
+        histogram_file_path = output_dir / 'benchmark_histograms.png'
         plt.savefig(histogram_file_path, dpi=150)
         print('Histograms saved to', histogram_file_path.resolve())
 
