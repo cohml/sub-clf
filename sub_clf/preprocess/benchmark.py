@@ -5,7 +5,7 @@ Benchmark the performance of two options for parallelized text preprocessing:
     2. using `sklearn.Pipeline` with custom regex-based transformers
 
 For each option, execute `NITER` iterations and compute the mean processing time,
-saving (1) the aggregate results to a "benchmark_aggregates.txt" and (2) the raw
+saving (1) the aggregate results to a "benchmark_aggregates.md" and (2) the raw
 results to a series of histograms in "benchmark_histograms.png".
 """
 
@@ -59,20 +59,20 @@ class PerformanceBenchmarker:
 
     @staticmethod
     def save_results(niter: int, ntext: int, durations: Dict[str, dd.Series]):
-        """Save benchmarking results to .txt and .png files."""
+        """Save benchmarking results to .md and .png files."""
 
         results = pd.DataFrame(durations)
         output_dir = Path(__file__).parent / 'benchmark_results'
         output_dir.mkdir(exist_ok=True, parents=True)
 
-        # save aggregate results (i.e., means and standard deviations) to .txt file
-        aggregates_file_path = output_dir / 'benchmark_aggregates.txt'
+        # save aggregate results (i.e., means and standard deviations) to .md file
+        aggregates_file_path = output_dir / 'benchmark_aggregates.md'
         aggregates_file = aggregates_file_path.open('w')
 
-        print(f'Aggregate results* ({niter} iterations, {ntext} texts)', file=aggregates_file)
+        print(f'Aggregate results ({niter} iterations, {ntext:,} texts)', file=aggregates_file)
         print('===============================================\n', file=aggregates_file)
-        print(results.agg(['mean', 'std']).T.to_string(), file=aggregates_file)
-        print('\n* units are in seconds', file=aggregates_file)
+        print(results.agg(['mean', 'std']).T.to_markdown(tablefmt='pipe'), file=aggregates_file)
+        print('\n> ℹ️  All units are in seconds', file=aggregates_file)
 
         aggregates_file.close()
         print('Results saved to', aggregates_file_path.resolve())
@@ -220,5 +220,5 @@ if __name__ == '__main__':
         duration = method.benchmark_performance(NITER, texts.text)
         durations[str(method)] = duration
 
-    # write aggregate results to .txt file and plot histograms as .png
+    # write aggregate results to .md file and plot histograms as .png
     PerformanceBenchmarker.save_results(NITER, len(texts), durations)

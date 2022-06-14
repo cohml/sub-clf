@@ -1,8 +1,0 @@
-Aggregate results* (100 iterations, 7528 texts)
-===============================================
-
-                      mean       std
-NlpPipe          13.497720  1.182763
-SklearnPipeline   6.853291  0.127701
-
-* units are in seconds
