@@ -112,7 +112,7 @@ class InlineCodeMatcher:
                {'TEXT' :            '`',   'OP' : '+'}]
 
     def __init__(self, vocab, greedy=None):
-        Token.set_extension("is_inline_code", default=False)
+        Token.set_extension('is_inline_code', default=False)
         self.matcher = Matcher(vocab)
         self.matcher.add('INLINE_CODE', [self.pattern], greedy=greedy)
 
@@ -131,7 +131,7 @@ class NlpPipe(PerformanceBenchmarker):
         self.nlp = English()
         self.nlp.add_pipe('inline_code_matcher')
 
-    @Language.factory("inline_code_matcher")
+    @Language.factory('inline_code_matcher')
     def create_inline_code_matcher(nlp, name):
         return InlineCodeMatcher(nlp.vocab)
 
@@ -152,8 +152,8 @@ class NlpPipe(PerformanceBenchmarker):
     def preprocess(self, text: dd.Series):
         docs = self.nlp.pipe(text, batch_size=DEFAULTS['NCPU'])
         annotations_df = self.get_annotations_df(docs)
-        is_punct_or_inline_code = ~(annotations_df.is_punct | annotations_df.is_inline_code)
-        annotations_df = annotations_df[is_punct_or_inline_code]
+        is_punct_or_inline_code = annotations_df.is_punct | annotations_df.is_inline_code
+        annotations_df = annotations_df[~is_punct_or_inline_code]
         docs = annotations_df.groupby('doc_id').text.apply(' '.join)
         return docs
 
