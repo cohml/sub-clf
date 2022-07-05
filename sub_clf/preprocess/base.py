@@ -10,10 +10,47 @@ warnings.simplefilter("ignore", UserWarning)
 
 from concurrent.futures import ThreadPoolExecutor
 from overrides import overrides
-from typing import Any, Optional
+from typing import Any, Dict, Optional, Pattern
 
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline
+
+
+class RegexTransformation:
+    """
+    An abstract container for a single regex-based text transformation, designed for
+    use with the `RegexTransformer` preprocessor.
+
+    When instantiating the class, a transformation must be passed in as a single-item
+    dictionary. The key must be a precompiled regex pattern, and the value must be
+    the associated replacement `str`.
+    """
+
+    def __init__(self, _transformation: Dict[Pattern, str]):
+        self.transformation = _transformation
+
+
+    @property
+    def transformation(self) -> Dict[Pattern, str]:
+        return self._transformation
+
+
+    @transformation.setter
+    def transformation(self, _transformation: Dict[Pattern, str]):
+        """
+        Validate the data types of the key (precompiled regex) and value (`str`) of the
+        passed transformation.
+        """
+
+        err = 'The `{}` attribute of a `RegexTransformation` subclass must be a {}.'
+        (pattern, replacement), = _transformation.items()
+
+        if not isinstance(pattern, Pattern):
+            raise TypeError(err.format('pattern', 'precompiled regex pattern'))
+        elif not isinstance(replacement, str):
+            raise TypeError(err.format('replacement', 'str'))
+
+        self._transformation = _transformation
 
 
 class SinglePreprocessor(BaseEstimator, TransformerMixin):
@@ -31,6 +68,7 @@ class SinglePreprocessor(BaseEstimator, TransformerMixin):
 
     def fit(self, X: dd.Series, y: Optional[Any] = None):
         """This method must be defined for all `SinglePreprocessor` subclasses."""
+
         return self
 
 

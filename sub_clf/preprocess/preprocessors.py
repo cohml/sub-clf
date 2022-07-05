@@ -7,13 +7,14 @@ import dask.dataframe as dd
 import re
 import spacy
 
+from collections.abc import Sequence
 from functools import partial
 from nltk import stem
 from operator import attrgetter
 from string import punctuation, whitespace
 from sklearn.feature_extraction.text import strip_accents_ascii, strip_accents_unicode
 
-from sub_clf.preprocess.base import SinglePreprocessor
+from sub_clf.preprocess.base import RegexTransformation, SinglePreprocessor
 from sub_clf.util.utils import pretty_dumps
 
 
@@ -35,27 +36,6 @@ class AccentRemover(SinglePreprocessor):
         return text
 
 
-class ApostropheNormalizer(SinglePreprocessor):
-    """
-    Normalize all apostrophes to a single standard form.
-
-    E.g.:
-
-    |Lorem ip‛sum dolor‘s sit amet
-        -->
-    |Lorem ip'sum dolor's sit amet
-    """
-
-    pattern = r"['‘’‛‚]"
-
-    def transform(self, text: dd.Series) -> dd.Series:
-        """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
-        apostrophes = {'pat' : re.compile(self.pattern),
-                       'repl' : "'",
-                       'regex' : True}
-        return text.str.replace(**apostrophes)
-
-
 class CaseNormalizer(SinglePreprocessor):
     """
     Normalize comments to lowercase.
@@ -70,102 +50,6 @@ class CaseNormalizer(SinglePreprocessor):
     def transform(self, text: dd.Series) -> dd.Series:
         """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
         return text.str.lower()
-
-
-class CodeBlockRemover(SinglePreprocessor):
-    """
-    Remove code blocks from comments, defined as lines beginning with four spaces or a
-    literal tab character.
-
-    E.g.:
-
-    |Lorem ipsum dolor sit amet,
-    |
-    |    consectetur adipiscing elit,
-    |    sed do eiusmod tempor incididunt
-    |
-    |ut labore et dolore magna aliqua.
-        -->
-    |Lorem ipsum dolor sit amet,
-    |
-    |
-    |ut labore et dolore magna aliqua.
-    """
-
-    pattern = r'(^|\n)(\t| {4,})+.+?$'
-
-    def transform(self, text: dd.Series) -> dd.Series:
-        """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
-        code_block = {'pat' : re.compile(self.pattern, re.MULTILINE),
-                      'repl' : '',
-                      'regex' : True}
-        return text.str.replace(**code_block)
-
-
-class HyperlinkRemover(SinglePreprocessor):
-    """
-    Remove hyperlinks from comments.
-
-    E.g.:
-
-    |Lorem ipsum dolor sit amet, [consectetur](https://www.website.com) adipiscing elit
-        -->
-    |Lorem ipsum dolor sit amet, [consectetur]( adipiscing elit
-    """
-
-    pattern = r'http\S+'
-
-    def transform(self, text: dd.Series) -> dd.Series:
-        """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
-        hyperlink = {'pat' : re.compile(self.pattern),
-                     'repl' : '',
-                     'regex' : True}
-        return text.str.replace(**hyperlink)
-
-
-class InlineCodeRemover(SinglePreprocessor):
-    """
-    Remove inline code (i.e., "`code`") from comments.
-
-    E.g.:
-
-    |Lorem ipsum `dolor` sit amet
-        -->
-    |Lorem ipsum  sit amet
-    """
-
-    pattern = r'`.+?`'
-
-    def transform(self, text: dd.Series) -> dd.Series:
-        inline_code = {'pat' : re.compile(self.pattern),
-                       'repl' : '',
-                       'regex' : True}
-        return text.str.replace(**inline_code)
-
-
-class NewlineCollapser(SinglePreprocessor):
-    """
-    Collapse sequences of multiple newline characters into just one.
-
-    E.g.:
-
-    |Lorem ipsum dolor sit amet,
-    |
-    |
-    |consectetur adipiscing elit
-        -->
-    |Lorem ipsum dolor sit amet,
-    |consectetur adipiscing elit
-    """
-
-    pattern = r'\n{2,}'
-
-    def transform(self, text: dd.Series) -> dd.Series:
-        """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
-        consecutive_newlines = {'pat' : re.compile(self.pattern, re.MULTILINE),
-                                'repl' : '\n',
-                                'regex' : True}
-        return text.str.replace(**consecutive_newlines)
 
 
 class PassthroughPreprocessor(SinglePreprocessor):
@@ -184,63 +68,24 @@ class PassthroughPreprocessor(SinglePreprocessor):
         return text
 
 
-class PunctuationRemover(SinglePreprocessor):
+class RegexTransformer(SinglePreprocessor):
     """
-    Remove common punctuation from comments. Note that apostrophes, hyphens, and
-    common mathematical symbols are not removed.
-
-    E.g.:
-
-    |Here's "Lorem-ipsum. dolor sit @met, <<consectetur>> adipiscing elit!"
-        -->
-    |Here's Lorem-ipsum dolor sit met consectetur adipiscing elit
+    Apply one or more `RegexTransformation` subclasses in parallel. The specific
+    transformations are applied in the order passed when instantiating the class.
     """
 
-    to_remove = ''
-    to_keep = set("'-+*/=")
-    for char in punctuation:
-        if char not in to_keep:
-            to_remove += char
+    def __init__(self, transformations: Sequence[RegexTransformation]):
+        self.transformations = transformations
 
-    pattern = fr'[{to_remove}]'
 
     def transform(self, text: dd.Series) -> dd.Series:
         """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
-        punct = {'pat' : re.compile(self.pattern),
-                 'repl' : '',
-                 'regex' : True}
-        return text.str.replace(**punct)
 
+        transformations = {}
+        for transformation in self.transformations:
+            transformations.update(transformation.transformation)
 
-class QuoteRemover(SinglePreprocessor):
-    """
-    Remove quotation lines (i.e., starting with "> ") from comments.
-
-    E.g.:
-
-    |Lorem ipsum dolor sit amet,
-    |
-    |> consectetur adipiscing elit,
-    |
-    |>> sed do eiusmod tempor incididunt
-    |
-    |ut labore et dolore magna aliqua.
-        -->
-    |Lorem ipsum dolor sit amet,
-    |
-    |
-    |
-    |ut labore et dolore magna aliqua.
-    """
-
-    pattern = r'(^|\n)(&gt;|>).*?\n'    # NB: ">" is sometimes rendered as "&gt;"
-
-    def transform(self, text: dd.Series) -> dd.Series:
-        """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
-        quote = {'pat' : re.compile(self.pattern),
-                 'repl' : '\n',
-                 'regex' : True}
-        return text.str.replace(**quote)
+        return text.replace(transformations, regex=True)
 
 
 class Stemmer(SinglePreprocessor):  # note: not used; tokens are lemmatized instead (by `StopwordRemover`)
@@ -322,25 +167,3 @@ class StopwordRemover(SinglePreprocessor):
     def transform(self, text: dd.Series) -> dd.Series:
         """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
         return text.map(self.remove_stopwords, meta=('text', 'object'))
-
-
-class WhitespaceNormalizer(SinglePreprocessor):
-    """
-    Normalize all whitespace characters to the same form, then collapse sequences of
-    consecutive whitespace down to a single whitespace character.
-
-    E.g.:
-
-    |Lorem   \t\t\n\n\t \t\n\r\x0b\x0c ipsum
-        -->
-    |Lorem ipsum
-    """
-
-    pattern = fr'[{whitespace}]+'
-
-    def transform(self, text: dd.Series) -> dd.Series:
-        """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
-        spaces = {'pat' : re.compile(self.pattern),
-                  'repl' : ' ',
-                  'regex' : True}
-        return text.str.replace(**spaces)
