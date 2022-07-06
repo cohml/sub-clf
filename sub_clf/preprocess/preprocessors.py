@@ -11,8 +11,9 @@ from collections.abc import Sequence
 from functools import partial
 from nltk import stem
 from operator import attrgetter
-from string import punctuation, whitespace
+from overrides import overrides
 from sklearn.feature_extraction.text import strip_accents_ascii, strip_accents_unicode
+from typing import Optional
 
 from sub_clf.preprocess.base import RegexTransformation, SinglePreprocessor
 from sub_clf.util.utils import pretty_dumps
@@ -74,18 +75,28 @@ class RegexTransformer(SinglePreprocessor):
     transformations are applied in the order passed when instantiating the class.
     """
 
-    def __init__(self, transformations: Sequence[RegexTransformation]):
+    @overrides
+    def __init__(self,
+                 transformations: Sequence[RegexTransformation],
+                 name: Optional[str] = None):
+        super().__init__(name)
+
         self.transformations = transformations
 
 
     def transform(self, text: dd.Series) -> dd.Series:
         """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
 
-        transformations = {}
-        for transformation in self.transformations:
-            transformations.update(transformation.transformation)
+        patterns = []
+        replacements = []
 
-        return text.replace(transformations, regex=True)
+        for transformation_obj in self.transformations:
+            for transformation in transformation_obj.transformations:
+                pattern, replacement = transformation
+                patterns.append(pattern)
+                replacements.append(replacement)
+
+        return text.replace(to_replace=patterns, value=replacements, regex=True)
 
 
 class Stemmer(SinglePreprocessor):  # note: not used; tokens are lemmatized instead (by `StopwordRemover`)
@@ -109,7 +120,10 @@ class Stemmer(SinglePreprocessor):  # note: not used; tokens are lemmatized inst
              'snowball' : stem.snowball.SnowballStemmer}
 
 
+    @overrides
     def __init__(self, type_='porter', **stem_method_kwargs):
+        super().__init__()
+
         stemmer = self.types.get(type_)
         if stemmer is None:
             raise TypeError(f'"{type_}" is not a recognized stemmer. Please select '
@@ -148,7 +162,10 @@ class StopwordRemover(SinglePreprocessor):
               'trf' : 'en_core_web_trf'}
 
 
+    @overrides
     def __init__(self, model='lg', lemmatize=False):
+        super().__init__()
+
         model_ = self.models.get(model)
         if model_ is None:
             raise TypeError(f'"{model}" is not a recognized language model for '

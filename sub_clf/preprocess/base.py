@@ -9,8 +9,7 @@ import warnings
 warnings.simplefilter("ignore", UserWarning)
 
 from concurrent.futures import ThreadPoolExecutor
-from overrides import overrides
-from typing import Any, Dict, Optional, Pattern
+from typing import Any, List, Optional, Pattern, Tuple
 
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline
@@ -21,47 +20,48 @@ class RegexTransformation:
     An abstract container for a single regex-based text transformation, designed for
     use with the `RegexTransformer` preprocessor.
 
-    When instantiating the class, a transformation must be passed in as a single-item
-    dictionary. The key must be a precompiled regex pattern, and the value must be
-    the associated replacement `str`.
+    When instantiating the class, transformations must be passed in as a list of
+    tuples. Each tuple must contain a precompiled regex pattern and the associated
+    replacement string.
     """
 
-    def __init__(self, _transformation: Dict[Pattern, str]):
-        self.transformation = _transformation
+    def __init__(self, _transformations: List[Tuple[Pattern, str]]):
+        self.transformations = _transformations
 
 
     @property
-    def transformation(self) -> Dict[Pattern, str]:
-        return self._transformation
+    def transformations(self) -> Tuple[Pattern, str]:
+        return self._transformations
 
 
-    @transformation.setter
-    def transformation(self, _transformation: Dict[Pattern, str]):
+    @transformations.setter
+    def transformations(self, _transformations: List[Tuple[Pattern, str]]):
         """
-        Validate the data types of the key (precompiled regex) and value (`str`) of the
-        passed transformation.
+        Validate the data types of each transformations, which must be a 2-tuple. For
+        each 2-tuple, the first item must be a precompiled regex and the second item
+        must be a `str`.
         """
 
         err = 'The `{}` attribute of a `RegexTransformation` subclass must be a {}.'
-        (pattern, replacement), = _transformation.items()
 
-        if not isinstance(pattern, Pattern):
-            raise TypeError(err.format('pattern', 'precompiled regex pattern'))
-        elif not isinstance(replacement, str):
-            raise TypeError(err.format('replacement', 'str'))
+        for transformation in _transformations:
+            pattern, replacement = transformation
 
-        self._transformation = _transformation
+            if not isinstance(pattern, Pattern):
+                raise TypeError(err.format('pattern', 'precompiled regex pattern'))
+            elif not isinstance(replacement, str):
+                raise TypeError(err.format('replacement', 'str'))
+
+        self._transformations = _transformations
 
 
 class SinglePreprocessor(BaseEstimator, TransformerMixin):
     """A single text preprocessing step."""
 
-    @overrides
-    def __init__(self, **kwargs):
-        pass
+    def __init__(self, name: Optional[str] = None, **kwargs):
+        self.name = name or self.__class__.__name__
 
 
-    @overrides
     def __repr__(self):
         return f'{self.__module__}.{self.__class__.__name__}'
 
@@ -113,7 +113,7 @@ class MultiplePreprocessorPipeline:
             print status to stdout if True, else preprocess silently
         """
 
-        steps = [(p.__class__.__name__, p) for p in preprocessors]
+        steps = [(p.name, p) for p in preprocessors]
         self.pipeline = Pipeline(steps=steps,
                                  verbose=verbose,
                                  memory='cache_directory')

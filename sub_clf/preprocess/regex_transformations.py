@@ -32,10 +32,11 @@ class ApostropheNormalizer(RegexTransformation):
 
     pattern = r'|'.join(apostrophes)
     replacement = "'"
-    _transformation = {re.compile(pattern) : replacement}
+    _transformations = [(re.compile(pattern), replacement)]
+
 
     def __init__(self):
-        RegexTransformation(self._transformation)
+        RegexTransformation(self._transformations)
 
 
 class CodeBlockRemover(RegexTransformation):
@@ -60,33 +61,58 @@ class CodeBlockRemover(RegexTransformation):
 
     pattern = r'(^|\n)(\t| {4,})+.+?$'
     replacement = ''
-    _transformation = {re.compile(pattern, re.MULTILINE) : replacement}
+    _transformations = [(re.compile(pattern, re.MULTILINE), replacement)]
+
 
     def __init__(self):
-        RegexTransformation(self._transformation)
+        RegexTransformation(self._transformations)
 
 
-class ConsecutiveNewlineCollapser(RegexTransformation):
+class HTMLConverter(RegexTransformation):
     """
-    Collapse sequences of multiple newline characters into just one.
+    Convert HTML character codes to literal characters. Converts only the small subset
+    of codes which seem relevant.
 
     E.g.:
 
-    |Lorem ipsum dolor sit amet,
-    |
-    |
-    |consectetur adipiscing elit
+    |&amp;&#32;Lorem&#32;ipsum&#32;dolor&#32;sit&#32;amet
         -->
-    |Lorem ipsum dolor sit amet,
-    |consectetur adipiscing elit
+    |> Lorem ipsum dolor sit amet
     """
 
-    pattern = r'\n{2,}'
-    replacement = '\n'
-    _transformation = {re.compile(pattern, re.MULTILINE) : replacement}
+    _transformations = [
+        (re.compile(r'&#32;'), ' '),
+        (re.compile(r'&#38;'), '&'), (re.compile(r'&amp;'), '&'),
+        (re.compile(r'&#60;'), '<'), (re.compile(r'&lt;'), '<'),
+        (re.compile(r'&#62;'), '>'), (re.compile(r'&gt;'), '>'),
+        (re.compile(r'&#160;'), ' '), (re.compile(r'&nbsp;'), ' '),
+        (re.compile(r'&#732;'), '˜'), (re.compile(r'&tilde;'), '˜'),
+        (re.compile(r'&#8194;'), '\u2002'), (re.compile(r'&ensp;'), '\u2002'),
+        (re.compile(r'&#8195;'), '\u2003'), (re.compile(r'&emsp;'), '\u2003'),
+        (re.compile(r'&#8201;'), '\u2009'), (re.compile(r'&thinsp;'), '\u2009'),
+        (re.compile(r'&#8204;'), '\u200C'), (re.compile(r'&zwnj;'), '\u200C'),
+        (re.compile(r'&#8205;'), '\u200D'), (re.compile(r'&zwj;'), '\u200D'),
+        (re.compile(r'&#8206;'), '\u200E'), (re.compile(r'&lrm;'), '\u200E'),
+        (re.compile(r'&#8207;'), '\u200F'), (re.compile(r'&rlm;'), '\u200F'),
+        (re.compile(r'&#8211;'), '–'), (re.compile(r'&ndash;'), '–'),
+        (re.compile(r'&#8212;'), '—'), (re.compile(r'&mdash;'), '—'),
+        (re.compile(r'&#8216;'), '‘'), (re.compile(r'&lsquo;'), '‘'),
+        (re.compile(r'&#8217;'), '’'), (re.compile(r'&rsquo;'), '’'),
+        (re.compile(r'&#8218;'), '‚'), (re.compile(r'&sbquo;'), '‚'),
+        (re.compile(r'&#8220;'), '“'), (re.compile(r'&ldquo;'), '“'),
+        (re.compile(r'&#8221;'), '”'), (re.compile(r'&rdquo;'), '”'),
+        (re.compile(r'&#8222;'), '„'), (re.compile(r'&bdquo;'), '„'),
+        (re.compile(r'&#8226;'), '•'), (re.compile(r'&bull;'), '•'),
+        (re.compile(r'&#8230;'), '…'), (re.compile(r'&hellip;'), '…'),
+        (re.compile(r'&#8242;'), '′'), (re.compile(r'&prime;'), '′'),
+        (re.compile(r'&#8243;'), '″'), (re.compile(r'&Prime;'), '″'),
+        (re.compile(r'&#8249;'), '‹'), (re.compile(r'&lsaquo;'), '‹'),
+        (re.compile(r'&#8250;'), '›'), (re.compile(r'&rsaquo;'), '›')
+    ]
+
 
     def __init__(self):
-        RegexTransformation(self._transformation)
+        RegexTransformation(self._transformations)
 
 
 class HyperlinkRemover(RegexTransformation):
@@ -102,10 +128,11 @@ class HyperlinkRemover(RegexTransformation):
 
     pattern = r'http\S+'
     replacement = ''
-    _transformation = {re.compile(pattern) : replacement}
+    _transformations = [(re.compile(pattern), replacement)]
+
 
     def __init__(self):
-        RegexTransformation(self._transformation)
+        RegexTransformation(self._transformations)
 
 
 class HyphenNormalizer(RegexTransformation):
@@ -122,10 +149,11 @@ class HyphenNormalizer(RegexTransformation):
 
     pattern = merge_chars(_hyphens)[:-2] # NB: `:-2` excludes "~" from the normalization
     replacement = '-'
-    _transformation = {re.compile(pattern) : replacement}
+    _transformations = [(re.compile(pattern), replacement)]
+
 
     def __init__(self):
-        RegexTransformation(self._transformation)
+        RegexTransformation(self._transformations)
 
 
 class InlineCodeRemover(RegexTransformation):
@@ -141,10 +169,11 @@ class InlineCodeRemover(RegexTransformation):
 
     pattern = r'`.+?`'
     replacement = ''
-    _transformation = {re.compile(pattern) : replacement}
+    _transformations = [(re.compile(pattern), replacement)]
+
 
     def __init__(self):
-        RegexTransformation(self._transformation)
+        RegexTransformation(self._transformations)
 
 
 class PunctuationRemover(RegexTransformation):
@@ -160,10 +189,11 @@ class PunctuationRemover(RegexTransformation):
 
     pattern = merge_chars(_punct)
     replacement = ''
-    _transformation = {re.compile(pattern) : replacement}
+    _transformations = [(re.compile(pattern), replacement)]
+
 
     def __init__(self):
-        RegexTransformation(self._transformation)
+        RegexTransformation(self._transformations)
 
 
 class QuotationMarkNormalizer(RegexTransformation):
@@ -182,10 +212,11 @@ class QuotationMarkNormalizer(RegexTransformation):
 
     pattern = r'|'.join(quotation_marks)
     replacement = '"'
-    _transformation = {re.compile(pattern) : replacement}
+    _transformations = [(re.compile(pattern), replacement)]
+
 
     def __init__(self):
-        RegexTransformation(self._transformation)
+        RegexTransformation(self._transformations)
 
 
 class QuoteRemover(RegexTransformation):
@@ -209,12 +240,13 @@ class QuoteRemover(RegexTransformation):
     |ut labore et dolore magna aliqua.
     """
 
-    pattern = r'(^|\n)(&gt;|>).*?\n'    # NB: ">" is sometimes rendered as "&gt;"
-    replacement = '\n'
-    _transformation = {re.compile(pattern) : replacement}
+    pattern = r'(^|\n) {,3}(&gt;|>).*?\n'    # NB: ">" is sometimes rendered as "&gt;"
+    replacement = ''
+    _transformations = [(re.compile(pattern), replacement)]
+
 
     def __init__(self):
-        RegexTransformation(self._transformation)
+        RegexTransformation(self._transformations)
 
 
 class WhitespaceNormalizer(RegexTransformation):
@@ -239,7 +271,8 @@ class WhitespaceNormalizer(RegexTransformation):
 
     pattern = fr'[{whitespace}]+'
     replacement = ' '
-    _transformation = {re.compile(pattern) : replacement}
+    _transformations = [(re.compile(pattern, re.MULTILINE), replacement)]
+
 
     def __init__(self):
-        RegexTransformation(self._transformation)
+        RegexTransformation(self._transformations)
