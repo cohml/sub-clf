@@ -7,10 +7,7 @@ base class.
 import dask.dataframe as dd
 import re
 
-from spacy.lang.char_classes import (_hyphens, _punct, LIST_QUOTES,
-                                     group_chars, merge_chars)
-
-from string import punctuation, whitespace
+from spacy.lang.char_classes import _hyphens, LIST_QUOTES, merge_chars
 
 from sub_clf.preprocess.base import RegexTransformation
 from sub_clf.util.utils import pretty_dumps
@@ -138,19 +135,19 @@ class HyperlinkRemover(RegexTransformation):
 
 class HyphenNormalizer(RegexTransformation):
     """
-    Normalize all hyphens, hyphen-like characters (excl. ~), and multi-hyphen sequences
-    to a single standard form.
+    Normalize all hyphens, hyphen-like characters (excluding ~), and multi-hyphen
+    sequences to a single standard form.
 
     E.g.:
 
-    |Lorem-ipsum–dolor—sit~  # these hyphens are all different characters despite appearing identical
+    |~Lorem-ipsum–dolor—sit---  # these hyphens look identical but are all different characters
         -->
-    |Lorem-ipsum–dolor-sit~
+    |~Lorem-ipsum–dolor-sit-
     """
 
-    hyphens = _hyphens[:-1] # exclude "~" from normalization
+    hyphens = merge_chars(_hyphens[:-1])  # exclude "~" from normalization
 
-    pattern = merge_chars(hyphens)
+    pattern = fr'({hyphens})+'
     replacement = '-'
     _transformations = [(re.compile(pattern), replacement)]
 
@@ -181,8 +178,8 @@ class InlineCodeRemover(RegexTransformation):
 
 class PunctuationRemover(RegexTransformation):
     """
-    Remove punctuation from comments. Standardized apostrophes, hyphens, and quotation
-    marks are left alone.
+    Remove punctuation from comments. Standardized apostrophes, hyphens, quotation
+    marks, and underscores are left alone.
 
     E.g.:
 
@@ -191,9 +188,7 @@ class PunctuationRemover(RegexTransformation):
     |Here's "Lorem-ipsum dolor sit met consectetur adipiscing elit"
     """
 
-    _punct += r' ` @ \.'
-
-    pattern = merge_chars(_punct)
+    pattern = r'[^\w\s\'\-"]'
     replacement = ''
     _transformations = [(re.compile(pattern), replacement)]
 
@@ -213,7 +208,7 @@ class QuotationMarkNormalizer(RegexTransformation):
     |"Lorem ipsum" "dolor's" sit "amet"
     """
 
-    quotation_mark_indices = [1, 2, 3, *range(8, 27)]
+    quotation_mark_indices = [1, 2, 3, *range(10, 27)]
     quotation_marks = [LIST_QUOTES[i] for i in quotation_mark_indices]
 
     pattern = r'|'.join(quotation_marks)
@@ -261,12 +256,12 @@ class WhitespaceNormalizer(RegexTransformation):
 
     E.g.:
 
-    |Lorem   \t\t\n\n\t \t\n\r\x0b\x0c '\u000A \u000B \u000C ipsum
+    |Lorem   \t\t\n\n\t \t\n\r\x0b\x0c \u000A \u000B \u000C ipsum
         -->
     |Lorem ipsum
     """
 
-    whitespace = group_chars(
+    whitespace = merge_chars(
         '\u000A \u000B \u000C \u000D \u0009 '
         '\u0020 \u00A0 \u1680 \u180E \u2000 '
         '\u2001 \u2002 \u2003 \u2004 \u2005 '
@@ -274,9 +269,9 @@ class WhitespaceNormalizer(RegexTransformation):
         '\u200B \u202F \u205F \u3000 \uFEFF '
         '\n \t \v \b \r \f \a'
     )
-    whitespace += ' '
+    whitespace += '| '
 
-    pattern = fr'[{whitespace}]+'
+    pattern = fr'({whitespace})+'
     replacement = ' '
     _transformations = [(re.compile(pattern, re.MULTILINE), replacement)]
 
