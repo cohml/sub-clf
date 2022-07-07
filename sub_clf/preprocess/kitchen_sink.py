@@ -21,7 +21,7 @@ class KitchenSinkPreprocessor(MultiplePreprocessorPipeline):
     multiple instances balances the desired parallelism with the required sequentialism.
     """
 
-    regex_transformations = [
+    regex_transformers = [
 
         # convert HTML codes to literal characters
         pp.RegexTransformer(
@@ -73,7 +73,7 @@ class KitchenSinkPreprocessor(MultiplePreprocessorPipeline):
     preprocessors = [
         pp.CaseNormalizer(),
         pp.AccentRemover(),
-        *regex_transformations,
+        *regex_transformers,
         pp.StopwordRemover(lemmatize=True)
     ]
 
