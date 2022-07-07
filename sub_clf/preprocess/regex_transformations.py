@@ -29,6 +29,7 @@ class ApostropheNormalizer(RegexTransformation):
 
     apostrophe_indices = [0, 4, 5, 6, 7]
     apostrophes = [LIST_QUOTES[i] for i in apostrophe_indices]
+    apostrophes += ['‛']
 
     pattern = r'|'.join(apostrophes)
     replacement = "'"
@@ -117,7 +118,7 @@ class HTMLConverter(RegexTransformation):
 
 class HyperlinkRemover(RegexTransformation):
     """
-    Remove hyperlinks from comments.
+    Remove hyperlinks and URLs from comments.
 
     E.g.:
 
@@ -126,7 +127,7 @@ class HyperlinkRemover(RegexTransformation):
     |Lorem ipsum dolor sit amet, [consectetur]( adipiscing elit
     """
 
-    pattern = r'http\S+'
+    pattern = r'(http|www)\S+'
     replacement = ''
     _transformations = [(re.compile(pattern), replacement)]
 
@@ -137,17 +138,19 @@ class HyperlinkRemover(RegexTransformation):
 
 class HyphenNormalizer(RegexTransformation):
     """
-    Normalize all hyphens, hyphen-like characters, and multi-hyphen sequences to a
-    single standard form.
+    Normalize all hyphens, hyphen-like characters (excl. ~), and multi-hyphen sequences
+    to a single standard form.
 
     E.g.:
 
-    |Lorem-ipsum–-dolor---sit
+    |Lorem-ipsum–dolor—sit~  # these hyphens are all different characters despite appearing identical
         -->
-    |Lorem-ipsum–dolor-sit
+    |Lorem-ipsum–dolor-sit~
     """
 
-    pattern = merge_chars(_hyphens)[:-2] # NB: `:-2` excludes "~" from the normalization
+    hyphens = _hyphens[:-1] # exclude "~" from normalization
+
+    pattern = merge_chars(hyphens)
     replacement = '-'
     _transformations = [(re.compile(pattern), replacement)]
 
@@ -178,7 +181,8 @@ class InlineCodeRemover(RegexTransformation):
 
 class PunctuationRemover(RegexTransformation):
     """
-    Remove punctuation from comments.
+    Remove punctuation from comments. Standardized apostrophes, hyphens, and quotation
+    marks are left alone.
 
     E.g.:
 
@@ -186,6 +190,8 @@ class PunctuationRemover(RegexTransformation):
         -->
     |Here's "Lorem-ipsum dolor sit met consectetur adipiscing elit"
     """
+
+    _punct += r' ` @ \.'
 
     pattern = merge_chars(_punct)
     replacement = ''
@@ -236,7 +242,6 @@ class QuoteRemover(RegexTransformation):
     |Lorem ipsum dolor sit amet,
     |
     |
-    |
     |ut labore et dolore magna aliqua.
     """
 
@@ -256,7 +261,7 @@ class WhitespaceNormalizer(RegexTransformation):
 
     E.g.:
 
-    |Lorem   \t\t\n\n\t \t\n\r\x0b\x0c ipsum
+    |Lorem   \t\t\n\n\t \t\n\r\x0b\x0c '\u000A \u000B \u000C ipsum
         -->
     |Lorem ipsum
     """
@@ -267,7 +272,9 @@ class WhitespaceNormalizer(RegexTransformation):
         '\u2001 \u2002 \u2003 \u2004 \u2005 '
         '\u2006 \u2007 \u2008 \u2009 \u200A '
         '\u200B \u202F \u205F \u3000 \uFEFF '
+        '\n \t \v \b \r \f \a'
     )
+    whitespace += ' '
 
     pattern = fr'[{whitespace}]+'
     replacement = ' '
