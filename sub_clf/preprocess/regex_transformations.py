@@ -178,8 +178,8 @@ class InlineCodeRemover(RegexTransformation):
 
 class PunctuationRemover(RegexTransformation):
     """
-    Remove punctuation from comments. Standardized apostrophes, hyphens, quotation
-    marks, and underscores are left alone.
+    Remove punctuation from comments. Apostrophes, hyphens, slashes, and underscores
+    are left alone, lest their removal complicate downstream tokenization.
 
     E.g.:
 
@@ -188,7 +188,7 @@ class PunctuationRemover(RegexTransformation):
     |Here's "Lorem-ipsum dolor sit met consectetur adipiscing elit"
     """
 
-    pattern = r'[^\w\s\'\-"]'
+    pattern = r'[^\w\s\'\-/_]'
     replacement = ''
     _transformations = [(re.compile(pattern), replacement)]
 
