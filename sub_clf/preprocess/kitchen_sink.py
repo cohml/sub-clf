@@ -31,7 +31,7 @@ class KitchenSinkPreprocessor(MultiplePreprocessorPipeline):
             name='HTMLConverter'
         ),
 
-        # standardize certain individual characters
+        # standardize certain individual characters (transformations require literals)
         pp.RegexTransformer(
             transformations=[
                 rt.HyphenNormalizer(),
@@ -51,13 +51,12 @@ class KitchenSinkPreprocessor(MultiplePreprocessorPipeline):
             name='GarbageSpanRemover'
         ),
 
-        # standardize other individual characters
+        # standardize apostrophes (would interfere with `InlineCodeRemover` because ` -> ')
         pp.RegexTransformer(
             transformations=[
                 rt.ApostropheNormalizer(),
-                rt.WhitespaceNormalizer()
             ],
-            name='ApostropheWhitespaceStandardizer'
+            name='ApostropheNormalizer'
         ),
 
         # remove all remaining punctuation characters
@@ -66,6 +65,14 @@ class KitchenSinkPreprocessor(MultiplePreprocessorPipeline):
                 rt.PunctuationRemover()
             ],
             name='PunctuationRemover'
+        ),
+
+        # standardize and collapse whitespace (`PunctuationRemover` may result in "  ")
+        pp.RegexTransformer(
+            transformations=[
+                rt.WhitespaceNormalizer()
+            ],
+            name='WhitespaceNormalizer'
         )
 
     ]
