@@ -18,8 +18,9 @@ class Config:
         with config_filepath.open() as config_fh:
             self.dict = yaml.safe_load(config_fh)
 
-        self._confirm_required_parameters_exist()
-        self._confirm_parameter_value_dtypes()
+        operation = self._get_operation()
+        self._confirm_required_parameters_exist(operation)
+        self._confirm_parameter_value_dtypes(operation)
 
         self.dict = DEFAULTS['CONFIG'] | self.dict
 
@@ -35,8 +36,19 @@ class Config:
         return parameter in self.dict
 
 
-    def _confirm_parameter_value_dtypes(self) -> None:
-        """Confirm all defined parameters are understood and of the correct types."""
+    def _confirm_parameter_value_dtypes(self, operation: str) -> None:
+        """
+        Confirm all defined parameters are understood and of the correct types.
+
+        Parameters
+        ----------
+        operation : str
+            "preprocess", "extract", or "train"
+
+        Raises
+        ------
+        ... # TODO
+        """
 
         dtypes_by_field = {
             'extractor' : Any,
@@ -52,14 +64,52 @@ class Config:
             'preprocessing_pipeline' : dict,
             'raw_data_directory' : str,
             'raw_data_filepaths' : list,
-            'save_features' : bool,
+            'save_features' : bool,         # <-- no longer optional; isolating feature extraction means you HAVE to save the features
             'save_model' : bool,
-            'save_preprocessed_texts' : bool,
+            'save_preprocessed_texts' : bool,    # <-- no longer optional; isolating preprocessing means you HAVE to save the preprocessed data
             'save_test_predictions' : bool,
-            'save_train_test_ids' : bool,
+            'save_train_test_ids' : bool,         # <-- no longer optional; isolating feature extraction means you HAVE to save the ids (b/c for certain features involving statistical transformations, you have to partition your data before computing features, so you have to track which samples are train and which are test; this is kind of a bummer since it means i'll have to extract new features whenever i want to try a differnt train-test split, but i don't see a way around it)
             'train_test_split_kwargs' : dict
         }
 
+
+
+
+        if operation == 'preprocess':
+            # required/optional keys:
+                # output_directory
+                # overwrite_existing
+                # preprocessors
+                # preprocessing_pipeline
+                # raw_data_filepaths
+                # raw_data_directory
+
+        elif operation == 'extract':    # FYI - this is where the train-test splitting must occur
+            # required/optional keys:
+                # extractor
+                # extractor_kwargs
+                # output_directory
+                # overwrite_existing
+                # save_train_test_ids
+                # train_test_split_kwargs
+
+        elif operation == 'train':
+            # required/optional keys:
+                # features_file
+                # mode (not yet implemented IIRC)
+                # model
+                # model_kwargs
+                # output_directory
+                # overwrite_existing
+                # performance_metrics
+                # save_model
+                # save_test_predictions
+
+
+
+
+
+        #### ORIGINAL TRAIN LOIGIC BELOW ####
         err = None
         for field, dtype in dtypes_by_field.items():
             if field not in self.dict or field in {'extractor', 'model'}:
@@ -137,8 +187,19 @@ class Config:
                 raise exception(err)
 
 
-    def _confirm_required_parameters_exist(self) -> None:
-        """Confirm all requires parameters are defined in the config."""
+    def _confirm_required_parameters_exist(self, operation: str) -> None:
+        """
+        Confirm all requires parameters are defined in the config.
+
+        Parameters
+        ----------
+        operation : str
+            "preprocess", "extract", or "train"
+
+        Raises
+        ------
+        ... # TODO
+        """
 
         err = None
         conflicting_err = ('Your config file must contain either a "{}" field or a '
@@ -177,6 +238,43 @@ class Config:
 
         if err is not None:
             raise ConfigFileError(err)
+
+
+    def _get_operation(self) -> str:
+        """
+        Identify and validate operation type specified in config.
+
+        Returns
+        -------
+        operation : str
+            "preprocess", "extract", or "train"
+
+        Raises
+        ------
+        KeyError
+            if config file has no "operation" field
+        ValueError
+            if the "operation" field's value is anything other than "preprocess",
+            "extract", or "train"
+        """
+
+        err = None
+        operation = self.dict.get('operation')
+
+        if operation is None:
+            exception = KeyError
+            err = 'Your config must contain an "operation" field.'
+
+        elif operation not in {'preprocess', 'extract', 'train'}:
+            exception = ValueError
+            err = ('Your config\'s "operation" field must specify either "preprocess",'
+                   ' (to apply preprocessing to raw data), "extract" (to extract '
+                   'features from preprocessed data), or "train" (to train a model).')
+
+        if err is not None:
+            raise exception(err)
+
+        return operation
 
 
 class ConfigFileError(Exception):
