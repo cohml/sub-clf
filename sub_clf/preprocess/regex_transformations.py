@@ -78,34 +78,39 @@ class HTMLConverter(RegexTransformation):
     |> Lorem ipsum dolor sit amet
     """
 
+    charcodes_to_literal = {
+        (r'&#32;',)               : ' ',
+        (r'&#38;',   r'&amp;')    : '&',
+        (r'&#60;',   r'&lt;')     : '<',
+        (r'&#62;',   r'&gt;')     : '>',
+        (r'&#160;',  r'&nbsp;')   : ' ',
+        (r'&#732;',  r'&tilde;')  : '˜',
+        (r'&#8194;', r'&ensp;')   : '\u2002',
+        (r'&#8195;', r'&emsp;')   : '\u2003',
+        (r'&#8201;', r'&thinsp;') : '\u2009',
+        (r'&#8204;', r'&zwnj;')   : '\u200C',
+        (r'&#8205;', r'&zwj;')    : '\u200D',
+        (r'&#8206;', r'&lrm;')    : '\u200E',
+        (r'&#8207;', r'&rlm;')    : '\u200F',
+        (r'&#8211;', r'&ndash;')  : '–',
+        (r'&#8212;', r'&mdash;')  : '—',
+        (r'&#8216;', r'&lsquo;')  : '‘',
+        (r'&#8217;', r'&rsquo;')  : '’',
+        (r'&#8218;', r'&sbquo;')  : '‚',
+        (r'&#8220;', r'&ldquo;')  : '“',
+        (r'&#8221;', r'&rdquo;')  : '”',
+        (r'&#8222;', r'&bdquo;')  : '„',
+        (r'&#8226;', r'&bull;')   : '•',
+        (r'&#8230;', r'&hellip;') : '…',
+        (r'&#8242;', r'&prime;')  : '′',
+        (r'&#8243;', r'&Prime;')  : '″',
+        (r'&#8249;', r'&lsaquo;') : '‹',
+        (r'&#8250;', r'&rsaquo;') : '›'
+    }
+
     _transformations = [
-        (re.compile(r'&#32;'), ' '),
-        (re.compile(r'&#38;'), '&'), (re.compile(r'&amp;'), '&'),
-        (re.compile(r'&#60;'), '<'), (re.compile(r'&lt;'), '<'),
-        (re.compile(r'&#62;'), '>'), (re.compile(r'&gt;'), '>'),
-        (re.compile(r'&#160;'), ' '), (re.compile(r'&nbsp;'), ' '),
-        (re.compile(r'&#732;'), '˜'), (re.compile(r'&tilde;'), '˜'),
-        (re.compile(r'&#8194;'), '\u2002'), (re.compile(r'&ensp;'), '\u2002'),
-        (re.compile(r'&#8195;'), '\u2003'), (re.compile(r'&emsp;'), '\u2003'),
-        (re.compile(r'&#8201;'), '\u2009'), (re.compile(r'&thinsp;'), '\u2009'),
-        (re.compile(r'&#8204;'), '\u200C'), (re.compile(r'&zwnj;'), '\u200C'),
-        (re.compile(r'&#8205;'), '\u200D'), (re.compile(r'&zwj;'), '\u200D'),
-        (re.compile(r'&#8206;'), '\u200E'), (re.compile(r'&lrm;'), '\u200E'),
-        (re.compile(r'&#8207;'), '\u200F'), (re.compile(r'&rlm;'), '\u200F'),
-        (re.compile(r'&#8211;'), '–'), (re.compile(r'&ndash;'), '–'),
-        (re.compile(r'&#8212;'), '—'), (re.compile(r'&mdash;'), '—'),
-        (re.compile(r'&#8216;'), '‘'), (re.compile(r'&lsquo;'), '‘'),
-        (re.compile(r'&#8217;'), '’'), (re.compile(r'&rsquo;'), '’'),
-        (re.compile(r'&#8218;'), '‚'), (re.compile(r'&sbquo;'), '‚'),
-        (re.compile(r'&#8220;'), '“'), (re.compile(r'&ldquo;'), '“'),
-        (re.compile(r'&#8221;'), '”'), (re.compile(r'&rdquo;'), '”'),
-        (re.compile(r'&#8222;'), '„'), (re.compile(r'&bdquo;'), '„'),
-        (re.compile(r'&#8226;'), '•'), (re.compile(r'&bull;'), '•'),
-        (re.compile(r'&#8230;'), '…'), (re.compile(r'&hellip;'), '…'),
-        (re.compile(r'&#8242;'), '′'), (re.compile(r'&prime;'), '′'),
-        (re.compile(r'&#8243;'), '″'), (re.compile(r'&Prime;'), '″'),
-        (re.compile(r'&#8249;'), '‹'), (re.compile(r'&lsaquo;'), '‹'),
-        (re.compile(r'&#8250;'), '›'), (re.compile(r'&rsaquo;'), '›')
+        (re.compile(charcode), literal)
+        for charcodes, literal in charcodes_to_literal.items() for charcode in charcodes
     ]
 
 
