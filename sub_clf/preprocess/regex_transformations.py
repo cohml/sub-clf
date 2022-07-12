@@ -190,11 +190,11 @@ class PunctuationRemover(RegexTransformation):
 
     |Here's "Lorem-ipsum. dolor sit @met, <<consectetur>> adipiscing elit!"
         -->
-    |Here's "Lorem-ipsum dolor sit met consectetur adipiscing elit"
+    |Here's "Lorem-ipsum  dolor sit  met    consectetur   adipiscing elit "
     """
 
     pattern = r'[^\w\s\'\-/_]'
-    replacement = ''
+    replacement = ' '
     _transformations = [(re.compile(pattern), replacement)]
 
 
