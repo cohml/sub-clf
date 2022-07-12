@@ -172,7 +172,7 @@ class InlineCodeRemover(RegexTransformation):
     |Lorem ipsum  sit amet
     """
 
-    pattern = r'`.+?`'
+    pattern = r'`+.+?`+'
     replacement = ''
     _transformations = [(re.compile(pattern), replacement)]
 
