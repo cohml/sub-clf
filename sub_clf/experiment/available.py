@@ -28,21 +28,11 @@ from sklearn.metrics import (
 from sub_clf.preprocess.kitchen_sink import KitchenSinkPreprocessor
 from sub_clf.preprocess.preprocessors import (
     AccentRemover,
-    ApostropheNormalizer,
     CaseNormalizer,
-    CodeBlockRemover,
-    HyperlinkRemover,
-    InlineCodeRemover,
-    NewlineCollapser,
     PassthroughPreprocessor,
-    PunctuationRemover,
-    QuoteRemover,
-    SinglePreprocessor,
     Stemmer,
-    StopwordRemover,
-    WhitespaceNormalizer
+    StopwordRemover
 )
-
 
 ## ---- sklearn models
 from sklearn.ensemble import (
@@ -91,18 +81,10 @@ AVAILABLE = {
     'PREPROCESSING' : {
         'PREPROCESSORS' : {
             'AccentRemover' : AccentRemover,
-            'ApostropheNormalizer': ApostropheNormalizer,
-            'CaseNormalizer': CaseNormalizer,
-            'CodeBlockRemover': CodeBlockRemover,
-            'HyperlinkRemover': HyperlinkRemover,
-            'InlineCodeRemover': InlineCodeRemover,
-            'NewlineCollapser': NewlineCollapser,
-            'PunctuationRemover': PunctuationRemover,
-            'PassthroughPreprocessor': PassthroughPreprocessor,
-            'QuoteRemover': QuoteRemover,
-            'Stemmer': Stemmer,
+            'CaseNormalizer' : CaseNormalizer,
+            'PassthroughPreprocessor' : PassthroughPreprocessor,
+            'Stemmer' : Stemmer,
             'StopwordRemover' : StopwordRemover,
-            'WhitespaceNormalizer': WhitespaceNormalizer
         },
         'PIPELINES' : {
             'KitchenSinkPreprocessor' : KitchenSinkPreprocessor
