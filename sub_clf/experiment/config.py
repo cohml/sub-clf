@@ -1,5 +1,6 @@
 """
-Object that parses and validates a config file enumerating experimental parameters.
+Object that parses and validates a config file enumerating parameters for the requested
+operation.
 """
 
 
@@ -13,6 +14,36 @@ from sub_clf.util.utils import full_path
 
 
 class Config:
+
+    valid_fields_and_dtypes = {
+        'preprocess' : {
+            'output_directory' : str,
+            'overwrite_existing' : bool,
+            'preprocessors' : list,
+            'preprocessing_pipeline' : dict,
+            'raw_data_directory' : str,
+            'raw_data_filepaths' : list
+        },
+        'extract' : {
+            'extractor' : Any,
+            'extractor_kwargs' : dict,
+            'preprocessed_data_directory' : str,
+            'output_directory' : str,
+            'overwrite_existing' : bool,
+            'train_test_split_kwargs' : dict
+        },
+        'train' : {
+            'features_file' : str,
+            'model' : Any,
+            'model_kwargs' : dict,
+            'output_directory' : str,
+            'overwrite_existing' : bool,
+            'performance_metrics' : list,
+            'save_model' : bool,
+            'save_test_predictions' : bool
+        }
+    }
+
 
     def __init__(self, config_filepath: Path) -> None:
         with config_filepath.open() as config_fh:
@@ -47,149 +78,72 @@ class Config:
 
         Raises
         ------
-        ... # TODO
+        ConfigFileError
+            if a field in the config file contains an unexpected datatype
         """
 
-        dtypes_by_field = {
-            'extractor' : Any,
-            'extractor_kwargs' : dict,
-            'features_file' : str,
-            'mode' : str,
-            'model' : Any,
-            'model_kwargs' : dict,
-            'output_directory' : str,
-            'overwrite_existing' : bool,
-            'performance_metrics' : list,
-            'preprocessors' : list,
-            'preprocessing_pipeline' : dict,
-            'raw_data_directory' : str,
-            'raw_data_filepaths' : list,
-            'save_features' : bool,         # <-- no longer optional; isolating feature extraction means you HAVE to save the features
-            'save_model' : bool,
-            'save_preprocessed_texts' : bool,    # <-- no longer optional; isolating preprocessing means you HAVE to save the preprocessed data
-            'save_test_predictions' : bool,
-            'save_train_test_ids' : bool,         # <-- no longer optional; isolating feature extraction means you HAVE to save the ids (b/c for certain features involving statistical transformations, you have to partition your data before computing features, so you have to track which samples are train and which are test; this is kind of a bummer since it means i'll have to extract new features whenever i want to try a differnt train-test split, but i don't see a way around it)
-            'train_test_split_kwargs' : dict
-        }
+        for field, dtype in self.valid_fields_and_dtypes[operation].items():
 
-
-
-
-        if operation == 'preprocess':
-            # required/optional keys:
-                # output_directory
-                # overwrite_existing
-                # preprocessors
-                # preprocessing_pipeline
-                # raw_data_filepaths
-                # raw_data_directory
-
-        elif operation == 'extract':    # FYI - this is where the train-test splitting must occur
-            # required/optional keys:
-                # extractor
-                # extractor_kwargs
-                # output_directory
-                # overwrite_existing
-                # save_train_test_ids
-                # train_test_split_kwargs
-
-        elif operation == 'train':
-            # required/optional keys:
-                # features_file
-                # mode (not yet implemented IIRC)
-                # model
-                # model_kwargs
-                # output_directory
-                # overwrite_existing
-                # performance_metrics
-                # save_model
-                # save_test_predictions
-
-
-
-
-
-        #### ORIGINAL TRAIN LOIGIC BELOW ####
-        err = None
-        for field, dtype in dtypes_by_field.items():
-            if field not in self.dict or field in {'extractor', 'model'}:
+            if field not in self.dict or dtype is Any:
                 continue
 
             if not isinstance(self.dict[field], dtype):
-                err = f'"{field}" is the incorrect data type. Expected {dtype}.'
+                raise ConfigFileError(
+                    f'"{field}" is the incorrect data type. Expected {dtype}.'
+                )
 
-            elif field.endswith('filepaths'):
+            if field.endswith('filepaths'):
                 for filepath in self.dict[field]:
                     if not isinstance(filepath, str):
-                        err = f'All entries under "{field}" must be {str}.'
+                        raise ConfigFileError(
+                            f'All entries under "{field}" must be {str}.'
+                        )
 
-        if err is not None:
-            raise TypeError(err)
+            elif field == 'performance_metrics':
+                for metric in self.dict[field]:
+                    if not len(metric) == 3 or \
+                       not isinstance(metric[0], str) or \
+                       not isinstance(metric[1], (str, type(None))) or \
+                       not isinstance(metric[2], dict):
+                        raise ConfigFileError(
+                            f'The "{field}" field  must be a list of lists where each '
+                            'inner list has three items: a metric name, a '
+                            'disambiguating suffix (e.g., "macro" vs. "micro", useful '
+                            'if the same metric is listed multiple times with '
+                            'different kwargs; set to `null` if no suffix), and a '
+                            'dict of kwargs (may be empty).'
+                        )
 
-        for field_name in ['performance_metrics', 'preprocessors',
-                           'preprocessing_pipeline']:
-            field = self.dict.get(field_name)
+            elif field == 'preprocessors':
+                err = (
+                    f'Every entry under the "{field}" field must be a single-item '
+                    f'{dict} with a valid preprocessor name string as the key and a '
+                    'dict of associated kwargs as the value.'
+                )
+                for preprocessor in self.dict[field]:
+                    if not isinstance(preprocessor, dict):
+                        raise ConfigFileError(err)
+                    for preprocessor_kwargs in preprocessor.values():
+                        if not isinstance(preprocessor_kwargs, dict):
+                            raise ConfigFileError(err)
 
-            if field is None:
-                continue
-
-            elif field_name == 'performance_metrics':
-                exception = TypeError
-                performance_metrics_err = ('Your config\'s "performance_metrics" field '
-                                           'must be a list of lists, where each inner '
-                                           'list has three items: a metric name, a '
-                                           'disambiguating suffix (e.g., "macro" vs. '
-                                           '"micro", useful if the same metric is '
-                                           'listed multiple times with different '
-                                           'kwargs; set to `null` if no suffix), and '
-                                           'a dict of kwargs (may be empty).')
-                if not isinstance(self.dict[field_name], list):
-                    err = performance_metrics_err
-                    break
-                for field in self.dict[field_name]:
-                    if not len(field) == 3 or \
-                       not isinstance(field[0], str) or \
-                       not isinstance(field[1], (str, type(None))) or \
-                       not isinstance(field[2], dict):
-                        err = performance_metrics_err
-                        break
-
-            elif field_name == 'preprocessors':
-                exception = TypeError
-                preprocessor_err = ('All entries under your config\'s "preprocessors" '
-                                    'field must be single-item {dict} with a valid '
-                                    'preprocessor name string as the key and a dict '
-                                    'of associated kwargs as the value.')
-
-                for processor in field:
-                    if not isinstance(processor, dict):
-                        err = preprocessor_err
-                        break
-                    for processor_kwargs in processor.values():
-                        if not isinstance(processor_kwargs, dict):
-                            err = preprocessor_err
-                            break
-
-            elif field_name == 'preprocessing_pipeline':
-                if len(field) != 1:
-                    exception = ConfigFileError
-                    err = ('Only a single preprocessing pipeline can be used. In your '
-                           'config, please specify it as '
-                           '"{<pipeline_name> : {verbose: <bool>}}".')
-                else:
-                    preprocessing_pipeline_kwargs, = field.values()
-                    if not isinstance(preprocessing_pipeline_kwargs, dict):
-                        exception = TypeError
-                        err = ('The value of the "preprocessing_pipeline" field must '
-                               f'be {dict}.')
-
-            if err is not None:
-                raise exception(err)
+            elif field == 'preprocessing_pipeline':
+                if len(self.dict[field]) != 1:
+                    raise ConfigFileError(
+                        'Only a single preprocessing pipeline can be used. In your '
+                        'config file, it must specified as "{<pipeline_name> : '
+                        '{verbose: <bool>}}".'
+                    )
+                preprocessing_pipeline_kwargs, = self.dict[field].values()
+                if not isinstance(preprocessing_pipeline_kwargs, dict):
+                    raise ConfigFileError(
+                        f'The value of the "{field}" field must be {dict}.'
+                    )
 
 
     def _confirm_required_parameters_exist(self, operation: str) -> None:
         """
-        Confirm all requires parameters are defined in the config.
+        Confirm all required parameters are defined in the config file.
 
         Parameters
         ----------
@@ -198,51 +152,59 @@ class Config:
 
         Raises
         ------
-        ... # TODO
+        ConfigFileError
+            - if the config file is missing any required fields
+            - if the config file contains any mutually exclusive fields
         """
 
-        err = None
-        conflicting_err = ('Your config file must contain either a "{}" field or a '
-                           '"{}" field, but not both.')
-        missing_err = 'Your config file must contain a "{}" field.'
+        def check_conflicting(field_1, field_2):
+            """Check whether the config file contains two mutually exclusive fields."""
 
-        if 'raw_data_directory' not in self.dict and 'raw_data_filepaths' not in self.dict:
-            err = missing_err.format('raw_data_directory" or a "raw_data_filepaths')
+            if field_1 in self.dict and field_2 in self.dict:
+                raise ConfigFileError(
+                    f'Your config file must contain a "{field_1}" or "{field_2}" field, '
+                    'but not both.'
+                )
 
-        elif 'raw_data_directory' in self.dict and 'raw_data_filepaths' in self.dict:
-            err = conflicting_err.format('raw_data_directory', 'raw_data_filepaths')
 
-        elif 'preprocessors' not in self.dict and 'preprocessing_pipeline' not in self.dict:
-            err = missing_err.format('preprocessors" or a "preprocessing_pipeline')
+        def check_missing(field_1, field_2=None):
+            """Check whether required fields are missing from the config file."""
 
-        elif 'preprocessors' in self.dict and 'preprocessing_pipeline' in self.dict:
-            err = conflicting_err.format('preprocessors', 'preprocessing_pipeline')
+            if field_2 is not None:
+                if field_1 not in self.dict and field_2 not in self.dict:
+                    raise ConfigFileError(
+                        f'Your config file must contain a "{field_1}" or "{field_2}" field.'
+                    )
+            else:
+                if field_1 not in self.dict:
+                    raise ConfigFileError(
+                        f'Your config file must contain a "{field_1}" field.'
+                    )
 
-        else:
-            required_fields = [
-                'extractor',
-                'performance_metrics',
-                'output_directory',
-                'mode',
-                'model'
-            ]
-            for required_field in required_fields:
-                if required_field not in self.dict:
-                    err = missing_err.format(required_field)
-                    break
 
-        mode = self.dict['mode']
-        if mode not in {'evaluate', 'train'}:
-            err = ('The "mode" parameter must be set to either "train" or "evaluate". '
-                   f'Got "{type(mode)}."')
+        # this field is required regsrdless of requested operation
+        check_missing('output_directory')
 
-        if err is not None:
-            raise ConfigFileError(err)
+        if operation == 'preprocess':
+            check_missing('preprocessors', 'preprocessing_pipeline')
+            check_conflicting('preprocessors', 'preprocessing_pipeline')
+
+            check_missing('raw_data_directory', 'raw_data_filepaths')
+            check_conflicting('raw_data_directory', 'raw_data_filepaths')
+
+        elif operation == 'extract':
+            check_missing('extractor')
+            check_missing('preprocessed_data_directory')
+
+        elif operation == 'train':
+            check_missing('features_file')
+            check_missing('model')
+            check_missing('performance_metrics')
 
 
     def _get_operation(self) -> str:
         """
-        Identify and validate operation type specified in config.
+        Identify and validate the operation type specified in the config file.
 
         Returns
         -------
@@ -251,31 +213,29 @@ class Config:
 
         Raises
         ------
-        KeyError
-            if config file has no "operation" field
-        ValueError
-            if the "operation" field's value is anything other than "preprocess",
-            "extract", or "train"
+        ConfigFileError
+            - if the config file has no "operation" field
+            - if the "operation" field's value is anything other than "preprocess",
+              "extract", or "train"
         """
 
-        err = None
         operation = self.dict.get('operation')
 
         if operation is None:
-            exception = KeyError
-            err = 'Your config must contain an "operation" field.'
+            raise ConfigFileError(
+                'Your config must contain an "operation" field.'
+            )
 
         elif operation not in {'preprocess', 'extract', 'train'}:
-            exception = ValueError
-            err = ('Your config\'s "operation" field must specify either "preprocess",'
-                   ' (to apply preprocessing to raw data), "extract" (to extract '
-                   'features from preprocessed data), or "train" (to train a model).')
-
-        if err is not None:
-            raise exception(err)
+            raise ConfigFileError(
+                'Your config\'s "operation" field must specify either "preprocess", '
+                '(to apply preprocessing to raw data), "extract" (to extract '
+                'features from preprocessed data), or "train" (to train a model).'
+            )
 
         return operation
 
 
 class ConfigFileError(Exception):
+    """Generic exception for all malformed config file errors."""
     pass

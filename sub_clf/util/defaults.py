@@ -18,19 +18,14 @@ _PARQUET_SCHEMA = {
 _PROJECT_DIR = Path(__file__).resolve().parent.parent
 
 DEFAULTS = {
-    'CONFIG' : {
+    'CONFIG' : {    # optional fields only, mostly
         'extractor_kwargs' : {},
-        'features_file' : None,
         'model_kwargs' : {},
         'overwrite_existing' : False,
         'raw_data_directory' : None,
         'raw_data_filepaths' : None,
-        'save_features': False,
-        'save_metadata': False,
         'save_model': False,
-        'save_preprocessed_texts': False,
         'save_test_predictions' : False,
-        'save_train_test_ids': False,
         'train_test_split_kwargs': {}
     },
     'IO' : {
