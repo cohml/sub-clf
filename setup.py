@@ -40,9 +40,11 @@ setup(
     entry_points={
         'console_scripts':
             [
-                'run = sub_clf.util.run:run',
                 'scrape = sub_clf.collect.scrape:main',
-                'tally = sub_clf.collect.tally:main'
+                'tally = sub_clf.collect.tally:main',
+                'preprocess = sub_clf.util.run:run',
+                'extract = sub_clf.util.run:run',
+                'train = sub_clf.util.run:run'
             ]
         },
 )

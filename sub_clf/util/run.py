@@ -14,28 +14,31 @@ from sub_clf.experiment.experiment import Experiment
 from sub_clf.util.utils import full_path
 
 
-def parse_args() -> argparse.Namespace:
+def _parse_cli() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description='Run a single machine learning experiment end to end using '
-                    'parameters enumerated in a config file.'
+        description='Apply parameters enumerated in a config file to either '
+                    'preprocess raw data, extract features from preprocessed data, or '
+                    'train a model on extracted features, depending on the command '
+                    'used (i.e., "preprocess", "extract", or "train").'
     )
     parser.add_argument(
         'config_filepath',
         type=full_path,
-        help='Path to a config .yaml enumerating parameters for your experiment.'
+        help='Path to a .yaml config file.'
     )
-    return parser.parse_args()
+
+    args = parser.parse_args()
+    operation = parser.prog  # will be either "preprocess", "extract", or "train"
+
+    return args, operation
 
 
 def run() -> None:
-    args = parse_args()
+    args, operation = _parse_cli()
 
-    config = Config(args.config_filepath)
+    config = Config(args.config_filepath, operation)
     dataset = Dataset(config)
-    experiment = Experiment(config, dataset)
 
-    experiment.run()
-
-
-if __name__ == '__main__':
-    run()
+    if operation == 'train':
+        experiment = Experiment(config, dataset)
+        experiment.run()

@@ -15,6 +15,7 @@ from sub_clf.util.utils import full_path
 
 class Config:
 
+    # all valid config file fields, both required and optional, broken out by operation
     valid_fields_and_dtypes = {
         'preprocess' : {
             'output_directory' : str,
@@ -45,11 +46,10 @@ class Config:
     }
 
 
-    def __init__(self, config_filepath: Path) -> None:
+    def __init__(self, config_filepath: Path, operation: str) -> None:
         with config_filepath.open() as config_fh:
             self.dict = yaml.safe_load(config_fh)
 
-        operation = self._get_operation()
         self._confirm_required_parameters_exist(operation)
         self._confirm_parameter_value_dtypes(operation)
 
@@ -61,6 +61,8 @@ class Config:
             elif parameter.endswith('filepaths') and value is not None:
                 value = [full_path(path) for path in value]
             setattr(self, parameter, value)
+
+        self.operation = operation
 
 
     def __contains__(self, parameter) -> None:
@@ -200,40 +202,6 @@ class Config:
             check_missing('features_file')
             check_missing('model')
             check_missing('performance_metrics')
-
-
-    def _get_operation(self) -> str:
-        """
-        Identify and validate the operation type specified in the config file.
-
-        Returns
-        -------
-        operation : str
-            "preprocess", "extract", or "train"
-
-        Raises
-        ------
-        ConfigFileError
-            - if the config file has no "operation" field
-            - if the "operation" field's value is anything other than "preprocess",
-              "extract", or "train"
-        """
-
-        operation = self.dict.get('operation')
-
-        if operation is None:
-            raise ConfigFileError(
-                'Your config must contain an "operation" field.'
-            )
-
-        elif operation not in {'preprocess', 'extract', 'train'}:
-            raise ConfigFileError(
-                'Your config\'s "operation" field must specify either "preprocess", '
-                '(to apply preprocessing to raw data), "extract" (to extract '
-                'features from preprocessed data), or "train" (to train a model).'
-            )
-
-        return operation
 
 
 class ConfigFileError(Exception):
