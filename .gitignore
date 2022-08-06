@@ -1,6 +1,8 @@
+.DS_Store
+*.egg-info
 __pycache__
 cache_directory
 credentials.json
 env
-*.egg-info
-.DS_Store
+fixtures/output/computed
+outputs

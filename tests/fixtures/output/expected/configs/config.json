@@ -1,0 +1,8 @@
+{
+    "operation": "preprocess",
+    "output_directory": "/Users/chamill/_/ml_projects/reddit/sub-clf/tests/fixtures/output/computed",
+    "overwrite_existing": true,
+    "raw_data_filepaths": [
+        "foo"
+    ]
+}
