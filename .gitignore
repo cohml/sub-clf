@@ -3,3 +3,4 @@ cache_directory
 credentials.json
 env
 *.egg-info
+.DS_Store
