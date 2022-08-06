@@ -3,7 +3,7 @@ Collection of text preprocessers and a base class for assembling them into pipel
 """
 
 
-import dask.dataframe as dd
+import pandas as pd
 import re
 import spacy
 
@@ -30,11 +30,11 @@ class AccentRemover(SinglePreprocessor):
     |iiiinooooouuuuy and iiiinooooouuuuy
     """
 
-    def transform(self, text: dd.Series) -> dd.Series:
+    def transform(self, data: pd.DataFrame) -> pd.DataFrame:
         """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
         for strip_accents in [strip_accents_ascii, strip_accents_unicode]:
-            text = text.map(strip_accents)
-        return text
+            data.text = data.text.map(strip_accents)
+        return data
 
 
 class CaseNormalizer(SinglePreprocessor):
@@ -48,9 +48,10 @@ class CaseNormalizer(SinglePreprocessor):
     |lorem ipsum dolor sit amet.
     """
 
-    def transform(self, text: dd.Series) -> dd.Series:
+    def transform(self, data: pd.DataFrame) -> pd.DataFrame:
         """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
-        return text.str.lower()
+        data.text = data.text.str.lower()
+        return data
 
 
 class PassthroughPreprocessor(SinglePreprocessor):
@@ -64,9 +65,9 @@ class PassthroughPreprocessor(SinglePreprocessor):
     |Lorem ipsum dolor sit amet.
     """
 
-    def transform(self, text: dd.Series) -> dd.Series:
+    def transform(self, data: pd.DataFrame) -> pd.DataFrame:
         """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
-        return text
+        return data
 
 
 class RegexTransformer(SinglePreprocessor):
@@ -84,7 +85,7 @@ class RegexTransformer(SinglePreprocessor):
         self.transformations = transformations
 
 
-    def transform(self, text: dd.Series) -> dd.Series:
+    def transform(self, data: pd.DataFrame) -> pd.DataFrame:
         """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
 
         patterns = []
@@ -96,7 +97,12 @@ class RegexTransformer(SinglePreprocessor):
                 patterns.append(pattern)
                 replacements.append(replacement)
 
-        return text.replace(to_replace=patterns, value=replacements, regex=True)
+        regex_transformations = {'to_replace' : patterns,
+                                 'value' : replacements,
+                                 'regex' : True}
+
+        data.text = data.text.replace(**regex_transformations).str.strip()
+        return data
 
 
 class Stemmer(SinglePreprocessor):  # note: not used; tokens are lemmatized instead (by `StopwordRemover`)
@@ -122,6 +128,9 @@ class Stemmer(SinglePreprocessor):  # note: not used; tokens are lemmatized inst
 
     @overrides
     def __init__(self, type_='porter', **stem_method_kwargs):
+        self.type_ = type_
+        for key, value in stem_method_kwargs.items():
+            setattr(self, key, value)
         super().__init__()
 
         stemmer = self.types.get(type_)
@@ -131,13 +140,14 @@ class Stemmer(SinglePreprocessor):  # note: not used; tokens are lemmatized inst
         self._stem = partial(stemmer().stem, **stem_method_kwargs)
 
 
-    def stem(self, comment: str):
+    def stem(self, comment: str) -> str:
         return ' '.join(map(self._stem, comment.split()))
 
 
-    def transform(self, text: dd.Series) -> dd.Series:
+    def transform(self, data: pd.DataFrame) -> pd.DataFrame:
         """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
-        return text.map(self.stem, meta=('text', 'object'))
+        data.text = data.text.map(self.stem)
+        return data
 
 
 class StopwordRemover(SinglePreprocessor):
@@ -164,6 +174,8 @@ class StopwordRemover(SinglePreprocessor):
 
     @overrides
     def __init__(self, model='lg', lemmatize=False):
+        self.model = model
+        self.lemmatize = lemmatize
         super().__init__()
 
         model_ = self.models.get(model)
@@ -175,12 +187,13 @@ class StopwordRemover(SinglePreprocessor):
         self.token = attrgetter('lemma_' if lemmatize else 'text')
 
 
-    def remove_stopwords(self, comment: str):
+    def remove_stopwords(self, comment: str) -> str:
         without_stopwords = (self.token(token) for token in self.nlp(comment)
                                                if not token.is_stop)
         return ' '.join(without_stopwords)
 
 
-    def transform(self, text: dd.Series) -> dd.Series:
+    def transform(self, data: pd.DataFrame) -> pd.DataFrame:
         """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
-        return text.map(self.remove_stopwords, meta=('text', 'object'))
+        data.text = data.text.map(self.remove_stopwords)
+        return data

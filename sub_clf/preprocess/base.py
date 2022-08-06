@@ -66,28 +66,28 @@ class SinglePreprocessor(BaseEstimator, TransformerMixin):
         return f'{self.__module__}.{self.__class__.__name__}'
 
 
-    def fit(self, X: dd.Series, y: Optional[Any] = None):
+    def fit(self, X: dd.core.DataFrame, y: Optional[Any] = None):
         """This method must be defined for all `SinglePreprocessor` subclasses."""
 
         return self
 
 
-    def preprocess(self, text: dd.Series):
+    def preprocess(self, data: dd.core.DataFrame) -> dd.core.DataFrame:
         """
         Apply preprocessing step to comments.
 
         Parameters
         ----------
-        text : dd.Series
-            raw comment texts
+        data : dd.core.DataFrame
+            data with comment texts
 
         Returns
         -------
-        processed_text : dd.Series
-            processed comment texts
+        data : dd.core.DataFrame
+            data with a single preprocessing step applied to comment texts
         """
 
-        return self.fit_transform(text)
+        return self.fit_transform(data)
 
 
 class MultiplePreprocessorPipeline:
@@ -119,22 +119,22 @@ class MultiplePreprocessorPipeline:
                                  memory='cache_directory')
 
 
-    def preprocess(self, text: dd.Series, ncores: int = 1):
+    def preprocess(self, data: dd.core.DataFrame, ncores: int = 1):
         """
         Apply parallelized pipeline of preprocessing steps to text.
 
         Parameters
         ----------
-        text : dd.Series
-            raw comment texts
+        data : dd.core.DataFrame
+            data with comment texts
         ncores : int
             cores available for parallel computation
 
         Returns
         -------
-        processed_text : dd.Series
-            processed comment texts
+        data : dd.core.DataFrame
+            data with a single preprocessing step applied to comment texts
         """
 
         with dask.config.set(pool=ThreadPoolExecutor(max_workers=ncores)):
-            return self.pipeline.fit_transform(text)
+            return self.pipeline.fit_transform(data)
