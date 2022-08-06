@@ -5,7 +5,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 
 setup(
     name='sub-clf',
-    version='1.0.0',
+    version='2.0.0',
     description='Resources for building Reddit comment classification models',
     long_description=(PROJECT_ROOT / 'README.md').read_text(),
     long_description_content_type='text/markdown',

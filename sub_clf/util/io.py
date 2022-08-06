@@ -1,6 +1,5 @@
 """
-Mappings between the available feature extractors and the
-functions needed to save/load their outputs to/from files.
+General utilities for file and object I/O.
 """
 
 
@@ -15,17 +14,20 @@ from typing import List, Union
 from sub_clf.util.defaults import DEFAULTS
 
 
-def load_raw_data(parent_directory: Union[List[Path], Path],
-                  subreddit: str = '*',
-                  **kwargs
-                 ) -> dd.DataFrame:
+def load_texts(
+    parent_directory: Union[List[Path], Path],
+    subreddit: str = '*',
+    **kwargs
+) -> dd.DataFrame:
     """Read and concatenate .parquet.gz files across multiple subreddits."""
 
     _read_parquet = partial(dd.read_parquet, **DEFAULTS['IO']['READ_PARQUET_KWARGS'])
 
     if isinstance(parent_directory, Path):
+        # single parent directory containing multiple subreddit subdirectories
         subreddit_directories = parent_directory.glob(f'subreddit={subreddit}')
     else:
+        # list of individual subreddit subdirectories
         subreddit_directories = parent_directory
 
     parquets = map(_read_parquet, subreddit_directories)

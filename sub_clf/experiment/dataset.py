@@ -3,98 +3,144 @@ Object representing a dataset and all its partitions.
 """
 
 import dask
+import dask.array as da
 import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
-from scipy.sparse.base import spmatrix
+from scipy.sparse import spmatrix
 from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
 
 from sub_clf.experiment.available import AVAILABLE
 from sub_clf.experiment.config import Config
+from sub_clf.experiment.writer import OutputWriter
 from sub_clf.preprocess.base import MultiplePreprocessorPipeline
 from sub_clf.util.defaults import DEFAULTS
-from sub_clf.util.io import FEATURE_LOADERS, load_raw_data
+from sub_clf.util.io import FEATURE_LOADERS, load_texts
 from sub_clf.util.utils import pretty_dumps
 
 
 class Dataset:
-    """The total set of all comments used to train and evaluate a model."""
+    """Class for preprocessing and extracting features from comment data."""
 
     def __init__(self, config: Config) -> None:
         """
-        Read in data and return features.
+        Instantiate a `Dataset` class instance based on config file parameters.
+
+        If `operation` == "preprocess":
+            Read in raw data, apply preprocessing steps specified in config, and write
+            output to .parquet.gz. In case of earlier partial failure, comments which
+            were previously preprocessed are dropped to avoid redundant preprocessing.
+
+        If `operation` == "extract":
+            Read in preprocessed data, partition into train and test sets, extract
+            features as specified in config, and write the resulting feature values to
+            "train" and "test" subdirectories.
+
+        If `operation` == "train":
+            Raise `NotImplementedError`.
 
         Parameters
         ----------
         config : Config
             an object enumerating all parameters for your experiment
+
+        Raises
+        ------
+        NotImplementedError
+            if `operation` == "train"
         """
 
-        # load and preprocess comments (these attrs are dask.dataframes)
-        self.raw_data = self.load_raw_data(config)
-        self.preprocessed_text = self.preprocess(config, self.raw_data)
+        output_writer = OutputWriter(config)
+        output_writer.write_config()
 
-        categorical_labels, ids = dask.compute(self.raw_data.subreddit.astype(object).values,
-                                               self.raw_data.index.values)
+        if config.operation == 'preprocess':
+            # load preprocessing pipeline as specified in config
+            pipeline = self.load_preprocessing_pipeline(config)
+            pipeline.pipeline.steps.append((output_writer.name, output_writer))
 
-        # integer-encode labels and get class names (these attrs are numpy.ndarrays)
-        self.categorical_labels = categorical_labels
-        self.labels, class_names = pd.factorize(self.categorical_labels)
-        self.class_name_mappings = dict(enumerate(class_names))
-        self.map_to_categorical = np.vectorize(self.class_name_mappings.get)
+            # load all raw data, group into batches by subreddit, and lazily preprocess
+            raw_data = self.load_texts(config)
 
-        # set other misc attributes
-        self.ids: np.ndarray = ids
-        self.size: int = len(self)
+            # optionally "resume" by dropping samples that were already preprocessed
+            if config.resume and (config.output_directory / 'data').exists():
+                try:
+                    raw_data = self.drop_preprocessed_comments(config, raw_data)
+                except ValueError: # output directory has no preprocessed data files
+                    pass
 
-        # extract features
-        if config.features_file is None:
-            self.features = self.extract_features(config, self.preprocessed_text)
-        else:
-            self.features = self.load_features(config)
+            batches = raw_data.groupby('subreddit')
+            preprocessed_data = batches.apply(self.preprocess, pipeline=pipeline)
 
-        self.describe()
-        self.partition(config)
+            # evaluate batched preprocessing (incl. writing preprocessed outputs)
+            try:
+                preprocessed_data.compute()
+            finally:
+                self.clean_up_tmp(config)
 
+        elif config.operation == 'extract':
+            # load feature extractor and preprocessed data as specified in config
+            extractor = self.load_feature_extractor(config)
+            preprocessed_data = self.load_texts(config)
 
-    def __len__(self):
-        return len(self.ids)
+            # partition preprocessed data into train and test sets
+            partitions = self.partition_preprocessed_data(config, preprocessed_data)
 
+            # fit feature extractor and vectorize train and test sets
+            features = {
+                'train' : extractor.fit_transform(partitions['train'].text),
+                'test' : extractor.transform(partitions['test'].text)
+            }
 
-    def describe(self) -> None:     # TODO
+            # optionally rescale features as specified in config
+            if config.scaler_pipeline is not None:
+                scaler_pipeline = self.load_scaler_pipeline(config)
+                # apply scaler pipeline to raw features
 
-        # `self.features`, `self.labels`, and `self.categorical_labels` will all be
-        # defined before this is called
+            # write features
+            output_writer.write_comment_ids(partitions)
+            output_writer.write_features(features)
 
-        # `self.features` will be a `np.ndarray` or a scipy sparse matrix, `self.labels`
-        # will be a `np.ndarray`, and `self.categorical_labels` will be a `dask.Series`
-
-        # in this method, just compute some summary statistics about distributions of
-        # classes and such, whatever i want to know in order to understand my model's
-        # performance better (see notes on phone for many ideas)
-
-        # these stats can be referenced when creating the `Report` object
-
-
-        self.metadata = Metadata(self)
-
-        # compute differences between train and test metadata to evaluate how similarly
-        # distributed the train and test sets are, both within and across subreddits
-#        self.metadata.diffs = ...
-        pass # TODO
-
-
+        elif config.operation == 'train':
+            raise NotImplementedError('`train` pipeline')
 
 
-    @classmethod
-    def extract_features(cls,
-                         config: Config,
-                         preprocessed_text) -> None:
-        """Extract features as specified in the config."""
+    def clean_up_tmp(self, config: Config) -> None:
+        """Remove .tmp file containing preprocessed comment IDs."""
+
+        ids_tmp_file = config.output_directory / 'data' / 'comment_ids.tmp'
+        ids_tmp_file.unlink()
+
+
+    def drop_preprocessed_comments(
+        self,
+        config: Config,
+        raw_data: dd.core.DataFrame
+    ) -> dd.core.DataFrame:
+        """
+        Resume partially complete preprocessing job by dropping samples were already
+        preprocessed.
+        """
+
+        ids_tmp_file = config.output_directory / 'data' / 'comment_ids.tmp'
+        preprocessed_comment_ids = ids_tmp_file.read_text().splitlines()
+
+        raw_data = raw_data.loc[~raw_data.index.isin(preprocessed_comment_ids)]
+
+        assert len(raw_data.index) > 0, (
+            'All data in the following location(s) has already been preprocessed: '
+            + str(config.raw_data_directory or config.raw_data_filepaths)
+        )
+
+        return raw_data
+
+
+    def load_feature_extractor(self, config: Config):
+        """Initialize `sklearn` vectorizer as specified in the config."""
 
         extractors = AVAILABLE['FEATURE_EXTRACTORS']
         extractor = extractors.get(config.extractor)
@@ -104,51 +150,11 @@ class Dataset:
                    f'Please select one from the following: {pretty_dumps(extractors)}')
             raise KeyError(err)
 
-        cls.extractor = extractor(**config.extractor_kwargs)
-        return cls.extractor.fit_transform(preprocessed_text)
+        return extractor(**config.extractor_kwargs)
 
 
-    def load_features(self, config: Config) -> None:
-        """Read in feature values from the specified file."""
-
-        # see imported `FEATURE_LOADERS` object for bespoke feature-loading functions,
-        # which vary by feature extractor
-
-        err = 'Loading features from a file is not yet implemented.'
-        raise NotImplementedError(err)
-
-        return None
-
-
-    @classmethod
-    def load_raw_data(cls, config: Config) -> None:
-        """Read and merge all raw data in the specified directory/files."""
-
-        return load_raw_data(config.raw_data_directory or config.raw_data_filepaths)
-
-
-    def partition(self, config: Config) -> None:
-        """Split data into train and test sets."""
-
-        indices = np.arange(self.size)
-        train, test = train_test_split(indices, **config.train_test_split_kwargs)
-
-        self.train = Partition(features=self.features[train],
-                               labels=self.labels[train],
-                               categorical_labels=self.map_to_categorical(self.labels[train]),
-                               ids=self.ids[train],
-                               class_name_mappings=self.class_name_mappings)
-
-        self.test = Partition(features=self.features[test],
-                              labels=self.labels[test],
-                              categorical_labels=self.map_to_categorical(self.labels[test]),
-                              ids=self.ids[test],
-                              class_name_mappings=self.class_name_mappings)
-
-
-    @classmethod
-    def preprocess(cls, config: Config, raw_data: dd.DataFrame) -> None:
-        """Apply preprocessing steps as specified in the config."""
+    def load_preprocessing_pipeline(self, config: Config) -> None:
+        """Initialize preprocessor as specified in the config."""
 
         if 'preprocessing_pipeline' in config:
 
@@ -182,79 +188,54 @@ class Dataset:
 
             pipeline = MultiplePreprocessorPipeline(*initialized_preprocessors)
 
-        return pipeline.preprocess(raw_data.text)
+        return pipeline
 
 
-class Partition(Dataset):
-    """A subset of the total dataset, for example a train or test set."""
+    def load_scaler_pipeline(self, config: Config) -> MultiplePreprocessorPipeline:
+        """Load pipeline or other object responsible for postprocessing feature values."""
 
-    def __init__(self,
-                 features: Union[np.ndarray, spmatrix],
-                 labels: np.ndarray,
-                 categorical_labels: np.ndarray,
-                 ids: np.ndarray,
-                 class_name_mappings: Dict[int, str]):
-        """
-        Create specialized `Dataset` object for the train or test set partitions.
+        raise NotImplementedError('Feature scaling')
 
-        Parameters
-        ----------
-        features : Union[np.ndarray, spmatrix]
-            extracted features
-        labels : np.ndarray
-            binarized labels
-        categorical_labels : np.ndarray
-            subreddit names - useful for `describe`
-        ids : np.ndarray
-            comment IDs
-        class_name_mappings ; Dict[int, str]
-            mappings between integer labels and categorical labels
-        """
+        scaler_pipeline = self.load_scaler_pipeline(config)
 
-        self.features = features
-        self.labels = labels
-        self.categorical_labels = categorical_labels
-        self.ids = ids
-        self.size = ids.size
-        self.class_name_mappings = class_name_mappings
-
-        self.describe()
+        return {
+            'train' : scaler_pipeline.fit_transform(train_features),
+            'test' : scaler_pipeline.transform(test_features)
+        }
 
 
-class Metadata:
-    """A container for housing all interesting `Dataset` metadata as attributes."""
+    def load_texts(self, config: Config) -> dd.core.DataFrame:
+        """Read and merge all .parquet.gz files in the specified directory/ies."""
 
-    def __init__(self, dataset: Union[Dataset, Partition]) -> None:
-        class_names = dataset.class_name_mappings.values()
-        _, n_by_class = np.unique(dataset.labels, return_counts=True)
-        self.class_distributions_n = pd.Series(n_by_class, index=class_names)
-        self.class_distributions_pct = self.class_distributions_n / dataset.size
+        if config.operation == 'preprocess':
+            path_or_paths = config.raw_data_directory or config.raw_data_filepaths
 
-        self.feature_matrix = self.compute_feature_metadata_matrix(dataset)
+        elif config.operation == 'extract':
+            path_or_paths = config.preprocessed_data_directory or config.preprocessed_data_filepaths
+
+        return load_texts(path_or_paths)
 
 
-    @staticmethod
-    def compute_feature_metadata_matrix(
-        dataset: Union[Dataset, Partition]
-    ) -> pd.DataFrame:
+    def partition_preprocessed_data(
+        self,
+        config: Config,
+        preprocessed_data: dd.core.DataFrame
+    ) -> Dict[str, dd.core.DataFrame]:
+        """Randomly subsample all preprocessed comments into train and test sets."""
 
-        if isinstance(dataset.features, spmatrix):
-            token_to_index = {i : t for  t, i in dataset.extractor.vocabulary_.items()}
-            feature_matrix = pd.DataFrame.sparse.from_spmatrix(dataset.features,
-                                                               index=dataset.ids)
-            feature_matrix.columns = feature_matrix.columns.map(token_to_index)
-#            ... but what can i do with this? with CountVectorizer anyway, the dims are enormous...
+        int_ids = np.arange(len(preprocessed_data))
+        train_ids, test_ids = train_test_split(int_ids, **config.train_test_split_kwargs)
 
-        elif isinstance(dataset.features, np.ndarray):
-            err = ('feature metadata matrix computation for np.ndarray feature sets '
-                   'not yet implemented')
-            raise NotImplementedError(err) # TODO
+        preprocessed_data['int_id'] = preprocessed_data.assign(i=1).i.cumsum() - 1
 
-        else:
-            err = ('Currently feature metadata matrices can only be computed for '
-                   f'features of type "{type(np.ndarray(0))}" or "{type(spmatrix)}", '
-                   f'but the "{type(dataset.extractor)}" feature extractor produces '
-                   f'type {type(dataset.features)}".')
-            raise NotImplementedError(err) # keep this one
+        return {
+            'train' : preprocessed_data[preprocessed_data.int_id.isin(train_ids)],
+            'test' : preprocessed_data[preprocessed_data.int_id.isin(test_ids)]
+        }
 
-        return feature_matrix
+
+    def preprocess(self, batch: dd.core.DataFrame, pipeline: Pipeline) -> dd.core.DataFrame:
+        """Apply preprocessing pipeline to the raw data of a single subreddit."""
+
+        if not batch.empty:
+            return pipeline.preprocess(batch)

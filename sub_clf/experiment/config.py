@@ -23,18 +23,21 @@ class Config:
             'preprocessors' : list,
             'preprocessing_pipeline' : dict,
             'raw_data_directory' : str,
-            'raw_data_filepaths' : list
+            'raw_data_filepaths' : list,
+            'resume' : bool
         },
         'extract' : {
             'extractor' : Any,
             'extractor_kwargs' : dict,
-            'preprocessed_data_directory' : str,
             'output_directory' : str,
             'overwrite_existing' : bool,
+            'preprocessed_data_directory' : str,
+            'preprocessed_data_filepaths' : list,
+            'scaler_pipeline' : Any,
             'train_test_split_kwargs' : dict
         },
         'train' : {
-            'features_file' : str,
+            'features_directory' : str,
             'model' : Any,
             'model_kwargs' : dict,
             'output_directory' : str,
@@ -48,14 +51,14 @@ class Config:
 
     def __init__(self, config_filepath: Path, operation: str) -> None:
         with config_filepath.open() as config_fh:
-            self.dict = yaml.safe_load(config_fh)
+            self._dict = yaml.safe_load(config_fh)
 
         self._confirm_required_parameters_exist(operation)
         self._confirm_parameter_value_dtypes(operation)
 
-        self.dict = DEFAULTS['CONFIG'] | self.dict
+        self._dict = DEFAULTS['CONFIG'][operation] | self._dict
 
-        for parameter, value in self.dict.items():
+        for parameter, value in self._dict.items():
             if parameter.endswith(('directory', 'file')) and value is not None:
                 value = full_path(value)
             elif parameter.endswith('filepaths') and value is not None:
@@ -66,7 +69,7 @@ class Config:
 
 
     def __contains__(self, parameter) -> None:
-        return parameter in self.dict
+        return parameter in self._dict
 
 
     def _confirm_parameter_value_dtypes(self, operation: str) -> None:
@@ -86,23 +89,23 @@ class Config:
 
         for field, dtype in self.valid_fields_and_dtypes[operation].items():
 
-            if field not in self.dict or dtype is Any:
+            if field not in self._dict or dtype is Any:
                 continue
 
-            if not isinstance(self.dict[field], dtype):
+            if not isinstance(self._dict[field], dtype):
                 raise ConfigFileError(
                     f'"{field}" is the incorrect data type. Expected {dtype}.'
                 )
 
             if field.endswith('filepaths'):
-                for filepath in self.dict[field]:
+                for filepath in self._dict[field]:
                     if not isinstance(filepath, str):
                         raise ConfigFileError(
                             f'All entries under "{field}" must be {str}.'
                         )
 
             elif field == 'performance_metrics':
-                for metric in self.dict[field]:
+                for metric in self._dict[field]:
                     if not len(metric) == 3 or \
                        not isinstance(metric[0], str) or \
                        not isinstance(metric[1], (str, type(None))) or \
@@ -122,7 +125,7 @@ class Config:
                     f'{dict} with a valid preprocessor name string as the key and a '
                     'dict of associated kwargs as the value.'
                 )
-                for preprocessor in self.dict[field]:
+                for preprocessor in self._dict[field]:
                     if not isinstance(preprocessor, dict):
                         raise ConfigFileError(err)
                     for preprocessor_kwargs in preprocessor.values():
@@ -130,13 +133,13 @@ class Config:
                             raise ConfigFileError(err)
 
             elif field == 'preprocessing_pipeline':
-                if len(self.dict[field]) != 1:
+                if len(self._dict[field]) != 1:
                     raise ConfigFileError(
                         'Only a single preprocessing pipeline can be used. In your '
                         'config file, it must specified as "{<pipeline_name> : '
                         '{verbose: <bool>}}".'
                     )
-                preprocessing_pipeline_kwargs, = self.dict[field].values()
+                preprocessing_pipeline_kwargs, = self._dict[field].values()
                 if not isinstance(preprocessing_pipeline_kwargs, dict):
                     raise ConfigFileError(
                         f'The value of the "{field}" field must be {dict}.'
@@ -162,7 +165,7 @@ class Config:
         def check_conflicting(field_1, field_2):
             """Check whether the config file contains two mutually exclusive fields."""
 
-            if field_1 in self.dict and field_2 in self.dict:
+            if field_1 in self._dict and field_2 in self._dict:
                 raise ConfigFileError(
                     f'Your config file must contain a "{field_1}" or "{field_2}" field, '
                     'but not both.'
@@ -173,12 +176,12 @@ class Config:
             """Check whether required fields are missing from the config file."""
 
             if field_2 is not None:
-                if field_1 not in self.dict and field_2 not in self.dict:
+                if field_1 not in self._dict and field_2 not in self._dict:
                     raise ConfigFileError(
                         f'Your config file must contain a "{field_1}" or "{field_2}" field.'
                     )
             else:
-                if field_1 not in self.dict:
+                if field_1 not in self._dict:
                     raise ConfigFileError(
                         f'Your config file must contain a "{field_1}" field.'
                     )
@@ -196,10 +199,12 @@ class Config:
 
         elif operation == 'extract':
             check_missing('extractor')
-            check_missing('preprocessed_data_directory')
+
+            check_missing('preprocessed_data_directory', 'preprocessed_data_filepaths')
+            check_conflicting('preprocessed_data_directory', 'preprocessed_data_filepaths')
 
         elif operation == 'train':
-            check_missing('features_file')
+            check_missing('features_directory')
             check_missing('model')
             check_missing('performance_metrics')
 

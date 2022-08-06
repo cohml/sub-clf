@@ -1,0 +1,40 @@
+## ---- model
+
+# required
+model: LogisticRegression
+# optional
+model_kwargs: {}
+
+
+## ---- performance metrics
+
+# required
+performance_metrics: [
+   [accuracy_score, null, {}],
+   [log_loss, None, {}],
+   [precision_score, micro, {average: micro}],
+   [precision_score, macro, {average: macro}],
+   [recall_score, micro, {average: micro}],
+   [recall_score, macro, {average: macro}],
+   [f1_score, micro, {average: micro}],
+   [f1_score, macro, {average: macro}],
+   [confusion_matrix, null, {normalize: "true"}],
+]
+
+
+## ---- features
+
+# required
+features_directory: ./outputs/extract/features/ # NB this dir should contain two files i think, one for train and one for test
+
+
+## ---- outputs
+
+# required
+output_directory: ./outputs/train
+# optional
+overwrite_existing: true
+# optional
+save_model: true
+# optional
+save_test_predictions: true

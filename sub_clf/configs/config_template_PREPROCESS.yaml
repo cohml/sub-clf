@@ -1,0 +1,26 @@
+## ---- raw data
+
+# required (either this or the following)
+#raw_data_directory: ./data/raw
+# required (either this or the preceding)
+raw_data_filepaths: [
+   # ./data/raw/subreddit=AskReddit,
+   ./data/raw/subreddit=analogkit,
+   ./data/raw/subreddit=SynthDoodles
+]
+
+
+## ---- preprocessors
+
+# required (either this or the following; preprocessors will be applied in order defined here)
+#preprocessors: [{CaseNormalizer: {}}]
+# required (either this or the preceding)
+preprocessing_pipeline: {KitchenSinkPreprocessor: {}}
+
+
+## ---- outputs
+
+# required
+output_directory: ./outputs/preprocess
+# optional
+overwrite_existing: true

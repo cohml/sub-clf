@@ -1,0 +1,33 @@
+## ---- preprocessed data
+
+# required (either this or the following)
+preprocessed_data_directory: ./outputs/preprocess/data
+# required (either this or the preceding)
+#preprocessed_data_filepaths: [
+#   ./outputs/preprocessed_data/subreddit=analogkit,
+#   ./outputs/preprocessed_data/subreddit=SynthDoodles,
+#]
+
+
+## ---- feature extraction
+
+# required
+extractor: CountVectorizer
+# optional
+extractor_kwargs: {}
+
+
+## ---- data partitioning
+
+# optional
+train_test_split_kwargs: {
+    random_state: 42
+}
+
+
+## ---- outputs
+
+# required
+output_directory: ./outputs/extract
+# optional
+overwrite_existing: true

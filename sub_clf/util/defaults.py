@@ -19,14 +19,26 @@ _PROJECT_DIR = Path(__file__).resolve().parent.parent
 
 DEFAULTS = {
     'CONFIG' : {    # optional fields only, mostly
-        'extractor_kwargs' : {},
-        'model_kwargs' : {},
-        'overwrite_existing' : False,
-        'raw_data_directory' : None,
-        'raw_data_filepaths' : None,
-        'save_model': False,
-        'save_test_predictions' : False,
-        'train_test_split_kwargs': {}
+        'preprocess' : {
+            'overwrite_existing' : False,
+            'raw_data_directory' : None,
+            'raw_data_filepaths' : None,
+            'resume' : True
+        },
+        'extract' : {
+            'extractor_kwargs' : {},
+            'overwrite_existing' : False,
+            'preprocessed_data_directory' : None,
+            'preprocessed_data_filepaths' : None,
+            'scaler_pipeline' : None,
+            'train_test_split_kwargs' : {}
+        },
+        'train' : {
+            'model_kwargs' : {},
+            'overwrite_existing' : False,
+            'save_model' : False,
+            'save_test_predictions' : False
+        }
     },
     'IO' : {
         'READ_PARQUET_KWARGS' : {
