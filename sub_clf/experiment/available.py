@@ -132,8 +132,8 @@ AVAILABLE = {
             'TheilSenRegressor': TheilSenRegressor
         },
         'SPACY' : {
-            'Lg' : lambda: en_core_web_lg.load(),
-            'Trf' : lambda: en_core_web_trf.load()
+            'Lg' : en_core_web_lg.load,
+            'Trf' : en_core_web_trf.load
         }
     }
 }
