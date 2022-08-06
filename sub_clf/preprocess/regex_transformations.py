@@ -73,7 +73,7 @@ class HTMLConverter(RegexTransformation):
 
     E.g.:
 
-    |&amp;&#32;Lorem&#32;ipsum&#32;dolor&#32;sit&#32;amet
+    |&gt;&#32;Lorem&#32;ipsum&#32;dolor&#32;sit&#32;amet
         -->
     |> Lorem ipsum dolor sit amet
     """
@@ -147,7 +147,7 @@ class HyphenNormalizer(RegexTransformation):
 
     |~Lorem-ipsum–dolor—sit---  # these hyphens look identical but are all different characters
         -->
-    |~Lorem-ipsum–dolor-sit-
+    |~Lorem-ipsum-dolor-sit-
     """
 
     hyphens = merge_chars(_hyphens[:-1])  # exclude "~" from normalization
@@ -188,9 +188,9 @@ class PunctuationRemover(RegexTransformation):
 
     E.g.:
 
-    |Here's "Lorem-ipsum. dolor sit @met, <<consectetur>> adipiscing elit!"
+    |Here's "Lorem-ipsum. dolor/sit @m3t, <<consectetur>> adipiscing_elit!"
         -->
-    |Here's "Lorem-ipsum  dolor sit  met    consectetur   adipiscing elit "
+    |Here's  Lorem-ipsum  dolor/sit  m3t    consectetur   adipiscing_elit
     """
 
     pattern = r'[^\w\s\'\-/_]'
@@ -210,7 +210,7 @@ class QuotationMarkNormalizer(RegexTransformation):
 
     |『Lorem ipsum』 “dolor‘s” sit "amet"
         -->
-    |"Lorem ipsum" "dolor's" sit "amet"
+    |"Lorem ipsum" "dolor‘s" sit "amet"
     """
 
     quotation_mark_indices = [1, 2, 3, *range(10, 27)]
@@ -240,7 +240,6 @@ class QuoteRemover(RegexTransformation):
     |ut labore et dolore magna aliqua.
         -->
     |Lorem ipsum dolor sit amet,
-    |
     |
     |ut labore et dolore magna aliqua.
     """
