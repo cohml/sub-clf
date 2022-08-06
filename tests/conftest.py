@@ -6,7 +6,7 @@ from typing import Dict
 from sub_clf.util.defaults import DEFAULTS
 
 
-@pytest.fixture(scope='module')     # possible to mix fixtures with classes? like, could i have a "TestDirectory" class of fixtures, with this and all other fixtures defined so far (all dirs) being members?
+@pytest.fixture(scope='module')
 def fixtures_directory() -> Path:
     package_root_directory = Path(__file__).resolve().parent.parent
     return package_root_directory / 'tests' / 'fixtures'
