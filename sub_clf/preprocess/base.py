@@ -30,7 +30,7 @@ class RegexTransformation:
 
 
     @property
-    def transformations(self) -> Tuple[Pattern, str]:
+    def transformations(self) -> List[Tuple[Pattern, str]]:
         return self._transformations
 
 
