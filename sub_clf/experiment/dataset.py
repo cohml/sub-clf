@@ -77,10 +77,10 @@ class Dataset:
             preprocessed_data = batches.apply(self.preprocess, pipeline=pipeline)
 
             # evaluate batched preprocessing (incl. writing preprocessed outputs)
-            try:
-                preprocessed_data.compute()
-            finally:
-                self.clean_up_tmp(config)
+            preprocessed_data.compute()
+
+            # clean up comment IDs .tmp file only once all preprocessing is complete
+            self.clean_up_tmp(config)
 
         elif config.operation == 'extract':
             # load feature extractor and preprocessed data as specified in config
