@@ -67,10 +67,11 @@ class Dataset:
             raw_data = self.load_texts(config)
 
             # optionally "resume" by dropping samples that were already preprocessed
-            if config.resume and (config.output_directory / 'data').exists():
+            if config.resume:
                 try:
                     raw_data = self.drop_preprocessed_comments(config, raw_data)
-                except ValueError: # output directory has no preprocessed data files
+                except (FileNotFoundError, # outdir has no .tmp file of comment IDs
+                        ValueError):       # outdir has no preprocessed data files
                     pass
 
             batches = raw_data.groupby('subreddit')
