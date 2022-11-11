@@ -43,14 +43,12 @@ DEFAULTS = {
     'IO' : {
         'READ_PARQUET_KWARGS' : {
             'blocksize' : 1e8,
-            'dataset' : {
-                'require_extension' : (
-                    '.parquet',
-                    '.parquet.gz'
-                )
-            },
             'engine' : 'pyarrow',
             'index' : 'comment_id',
+            'parquet_file_extension' : (
+                    '.parquet',
+                    '.parquet.gz'
+            ),
         },
         'TO_PARQUET_KWARGS' : {
             'compression' : 'gzip',
