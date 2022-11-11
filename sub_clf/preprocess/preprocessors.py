@@ -3,6 +3,7 @@ Collection of text preprocessers and a base class for assembling them into pipel
 """
 
 
+import dask.dataframe as dd
 import pandas as pd
 import re
 import spacy
@@ -10,10 +11,11 @@ import spacy
 from collections.abc import Sequence
 from functools import partial
 from nltk import stem
+from numpy import nan
 from operator import attrgetter
 from overrides import overrides
 from sklearn.feature_extraction.text import strip_accents_ascii, strip_accents_unicode
-from typing import Optional
+from typing import Optional, Union
 
 from sub_clf.preprocess.base import RegexTransformation, SinglePreprocessor
 from sub_clf.util.utils import pretty_dumps
@@ -30,11 +32,17 @@ class AccentRemover(SinglePreprocessor):
     |iiiinooooouuuuy and iiiinooooouuuuy
     """
 
-    def transform(self, data: pd.DataFrame) -> pd.DataFrame:
+    def transform(
+        self,
+        data: Union[dd.DataFrame, pd.DataFrame]
+    ) -> Union[dd.DataFrame, pd.DataFrame]:
         """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
         for strip_accents in [strip_accents_ascii, strip_accents_unicode]:
             data.text = data.text.map(strip_accents)
-        return data
+
+        is_empty = (data.text == '')
+        data.text = data.text.mask(is_empty, nan)
+        return data.dropna(subset='text')
 
 
 class CaseNormalizer(SinglePreprocessor):
@@ -48,7 +56,10 @@ class CaseNormalizer(SinglePreprocessor):
     |lorem ipsum dolor sit amet.
     """
 
-    def transform(self, data: pd.DataFrame) -> pd.DataFrame:
+    def transform(
+        self,
+        data: Union[dd.DataFrame, pd.DataFrame]
+    ) -> Union[dd.DataFrame, pd.DataFrame]:
         """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
         data.text = data.text.str.lower()
         return data
@@ -65,7 +76,10 @@ class PassthroughPreprocessor(SinglePreprocessor):
     |Lorem ipsum dolor sit amet.
     """
 
-    def transform(self, data: pd.DataFrame) -> pd.DataFrame:
+    def transform(
+        self,
+        data: Union[dd.DataFrame, pd.DataFrame]
+    ) -> Union[dd.DataFrame, pd.DataFrame]:
         """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
         return data
 
@@ -85,7 +99,10 @@ class RegexTransformer(SinglePreprocessor):
         self.transformations = transformations
 
 
-    def transform(self, data: pd.DataFrame) -> pd.DataFrame:
+    def transform(
+        self,
+        data: Union[dd.DataFrame, pd.DataFrame]
+    ) -> Union[dd.DataFrame, pd.DataFrame]:
         """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
 
         patterns = []
@@ -102,7 +119,10 @@ class RegexTransformer(SinglePreprocessor):
                                  'regex' : True}
 
         data.text = data.text.replace(**regex_transformations).str.strip()
-        return data
+
+        is_empty = (data.text == '')
+        data.text = data.text.mask(is_empty, nan)
+        return data.dropna(subset='text')
 
 
 class Stemmer(SinglePreprocessor):  # note: not used; tokens are lemmatized instead (by `StopwordRemover`)
@@ -144,7 +164,10 @@ class Stemmer(SinglePreprocessor):  # note: not used; tokens are lemmatized inst
         return ' '.join(map(self._stem, comment.split()))
 
 
-    def transform(self, data: pd.DataFrame) -> pd.DataFrame:
+    def transform(
+        self,
+        data: Union[dd.DataFrame, pd.DataFrame]
+    ) -> Union[dd.DataFrame, pd.DataFrame]:
         """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
         data.text = data.text.map(self.stem)
         return data
@@ -193,7 +216,13 @@ class StopwordRemover(SinglePreprocessor):
         return ' '.join(without_stopwords)
 
 
-    def transform(self, data: pd.DataFrame) -> pd.DataFrame:
+    def transform(
+        self,
+        data: Union[dd.DataFrame, pd.DataFrame]
+    ) -> Union[dd.DataFrame, pd.DataFrame]:
         """Apply preprocessing; required for any `SinglePreprocessor` subclass."""
         data.text = data.text.map(self.remove_stopwords)
-        return data
+
+        is_empty = (data.text == '')
+        data.text = data.text.mask(is_empty, nan)
+        return data.dropna(subset='text')
