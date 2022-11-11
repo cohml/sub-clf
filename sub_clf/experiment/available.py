@@ -3,9 +3,11 @@ Load all objects available for use in this package.
 """
 
 ## ---- feature extractors
-from sklearn.feature_extraction.text import (
-    HashingVectorizer,
+from dask_ml.feature_extraction.text import (
     CountVectorizer,
+    HashingVectorizer
+)
+from sklearn.feature_extraction.text import (
     TfidfTransformer,
     TfidfVectorizer
 )
